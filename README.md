@@ -6,6 +6,9 @@ Table of Contents
    * [API usage guidelines](#api-usage-guidelines)
    * [Location information](#location-information)
    * [How to build and run](#how-to-build-and-run)
+     * [Command line](#command-line)
+     * [IntelliJ IDEA](#intellij-idea)
+
 
 # General info
 ReExtractor is a library/API written in Java that can detect refactorings applied between two successive versions of a Java project.
