@@ -15,8 +15,8 @@ import org.reextractor.util.MethodUtils;
 import org.reextractor.util.StringUtils;
 import org.remapper.dto.*;
 import org.remapper.handler.MatchingHandler;
-import org.remapper.service.MatcherService;
-import org.remapper.service.MatcherServiceImpl;
+import org.remapper.service.EntityMatcherService;
+import org.remapper.service.EntityMatcherServiceImpl;
 import org.remapper.util.DiceFunction;
 
 import java.util.*;
@@ -63,7 +63,7 @@ public class RefactoringMinerServiceImpl implements RefactoringMinerService {
 
     protected void detectRefactorings(Repository repository, final RefactoringHandler handler, RevCommit currentCommit) throws Exception {
         List<Refactoring> refactoringsAtRevision;
-        MatcherService service = new MatcherServiceImpl();
+        EntityMatcherService service = new EntityMatcherServiceImpl();
         String commitId = currentCommit.getId().getName();
         if (currentCommit.getParentCount() > 0) {
             MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
