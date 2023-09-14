@@ -86,13 +86,13 @@ Currently, it supports the detection of the following refactorings:
 69. Invert Condition
 70. Merge Conditional
 
-**<ins>supported by ReExtractor</ins>**
+71. Change Loop Type *
+72. Merge Declaration and Assignment *
+73. Replace if with Ternary Operator *
+74. Replace switch with if *
+75. Loop Interchange *
 
-71. Change Loop Type
-72. Merge Declaration and Assignment
-73. Replace if with Ternary Operator
-74. Replace switch with if
-75. Loop Interchange
+\* not supported by other refactoring detection tools
 
 # Requirements
 
@@ -109,8 +109,8 @@ In the code snippet below we demonstrate how to print all refactorings performed
 ```java
 GitService gitService = new GitServiceImpl();
 try (Repository repo = gitService.openRepository("E:/refactoring-toy-example")) {
-  RefactoringMinerService miner = new RefactoringMinerServiceImpl();
-  miner.detectAtCommit(repo, "d4bce13a443cf12da40a77c16c1e591f4f985b47", new RefactoringHandler() {
+  RefactoringExtractorService extractor = new RefactoringExtractorServiceImpl();
+  extractor.detectAtCommit(repo, "d4bce13a443cf12da40a77c16c1e591f4f985b47", new RefactoringHandler() {
     @Override
     public void handle(String commitId, List<Refactoring> refactorings) {
       System.out.println("Refactorings at " + commitId);
