@@ -85,14 +85,13 @@ Currently, it supports the detection of the following refactorings:
 68. Split Conditional
 69. Invert Condition
 70. Merge Conditional
-
 71. Change Loop Type *
 72. Merge Declaration and Assignment *
 73. Replace if with Ternary Operator *
 74. Replace switch with if *
 75. Loop Interchange *
 
-\* not supported by other refactoring detection tools
+&nbsp;&nbsp;\* not supported by other refactoring detection tools
 
 # Requirements
 
