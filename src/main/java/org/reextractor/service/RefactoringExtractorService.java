@@ -3,7 +3,7 @@ package org.reextractor.service;
 import org.eclipse.jgit.lib.Repository;
 import org.reextractor.handler.RefactoringHandler;
 
-public interface RefactoringMinerService {
+public interface RefactoringExtractorService {
 
     /**
      * Detect refactorings performed in the specified commit.

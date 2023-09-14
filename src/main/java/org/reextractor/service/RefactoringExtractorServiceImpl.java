@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-public class RefactoringMinerServiceImpl implements RefactoringMinerService {
+public class RefactoringExtractorServiceImpl implements RefactoringExtractorService {
 
 
     @Override
