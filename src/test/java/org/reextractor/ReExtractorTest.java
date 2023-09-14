@@ -7,8 +7,8 @@ import org.junit.Test;
 import org.reextractor.dto.RefactoringMiningJSON;
 import org.reextractor.handler.RefactoringHandler;
 import org.reextractor.refactoring.Refactoring;
-import org.reextractor.service.RefactoringMinerService;
-import org.reextractor.service.RefactoringMinerServiceImpl;
+import org.reextractor.service.RefactoringExtractorService;
+import org.reextractor.service.RefactoringExtractorServiceImpl;
 import org.remapper.service.GitService;
 import org.remapper.util.GitServiceImpl;
 
@@ -30,7 +30,7 @@ public class ReExtractorTest {
         GitService gitService = new GitServiceImpl();
         try (Repository repo = gitService.openRepository(folder)) {
             String gitURL = GitServiceImpl.getRemoteUrl(folder);
-            RefactoringMinerService service = new RefactoringMinerServiceImpl();
+            RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
             service.detectAtCommit(repo, commitId, new RefactoringHandler() {
                 @Override
                 public void handle(String commitId, List<Refactoring> refactorings) {
