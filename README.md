@@ -1,13 +1,15 @@
 Table of Contents
 =================
 
-   * [General info](#general-info)
-   * [Requirements](#requirements)
-   * [API usage guidelines](#api-usage-guidelines)
-   * [Location information](#location-information)
-   * [How to build and run](#how-to-build-and-run)
+* [General info](#general-info)
+* [Requirements](#requirements)
+* [API usage guidelines](#api-usage-guidelines)
+* [Location information](#location-information)
+* [How to build and run](#how-to-build-and-run)
      * [Command line](#command-line)
      * [IntelliJ IDEA](#intellij-idea)
+* [How to add as a Maven dependency](#how-to-add-as-a-maven-dependency)
+* [Tool](#tool)
 
 
 # General info
@@ -258,3 +260,25 @@ In both cases, you will get the output in JSON format:
         }
       ]
     }
+
+# How to add as a maven dependency
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.lyoubo/refactoring-extractor/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.lyoubo/refactoring-extractor)
+
+To add ReExtractor as a maven dependency in your project, add the following snippet to your project's pom.xml:
+
+    <dependency>
+      <groupId>io.github.lyoubo</groupId>
+      <artifactId>refactoring-extractor</artifactId>
+      <version>1.1.0</version>
+    </dependency>
+
+# Tool
+
+To get refactoring information when inspecting a commit of a Java project, you can use our [RefactoringExtractor tool](tool/).
+
+- Git Repository: Local or cloned Java project
+- Commit SHA1: Git commit ID
+- JSON File Path: JSON output file
+
+<img src="./tool/fig.png" alt="clone repository" width="40%" />
