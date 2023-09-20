@@ -17,33 +17,38 @@ ReExtractor is a library/API written in Java that can detect refactorings applie
 
 Currently, it supports the detection of the following refactorings:
 
-1. Extract Method
-2. Inline Method
-3. Rename Method
-4. Move Method
-5. Move Attribute
-6. Pull Up Method
-7. Pull Up Attribute
-8. Push Down Method
-9. Push Down Attribute
-10. Extract Superclass
-11. Extract Interface
-12. Move Class
-13. Rename Class
-14. Extract and Move Method
-15. Move and Rename Class
-16. Extract Class
-17. Extract Subclass
-18. Extract Variable
-19. Inline Variable
-20. Rename Variable
-21. Rename Parameter
-22. Rename Attribute
-23. Move and Rename Attribute
-24. Change Variable Type
-25. Change Parameter Type
-26. Change Return Type
-27. Change Attribute Type
+**<ins>supported by ReExtractor 1.0 and newer versions</ins>**
+
+1. Rename Method
+2. Rename Attribute
+3. Rename Class
+4. Move Class
+5. Extract Class
+6. Extract Method
+7. Inline Method
+8. Change Return Type
+9. Change Attribute Type
+
+**<ins>supported by ReExtractor 1.1 and newer versions</ins>**
+
+10. Move Method
+11. Move Attribute
+12. Pull Up Method
+13. Pull Up Attribute
+14. Push Down Method
+15. Push Down Attribute
+16. Extract Superclass
+17. Extract Interface
+18. Extract and Move Method
+19. Move and Rename Class
+20. Extract Subclass
+21. Extract Variable
+22. Inline Variable
+23. Rename Variable
+24. Rename Parameter
+25. Move and Rename Attribute
+26. Change Variable Type
+27. Change Parameter Type
 28. Move and Rename Method
 29. Move and Inline Method
 30. Add Method Annotation
