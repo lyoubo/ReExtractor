@@ -68,10 +68,6 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         if (currentCommit.getParentCount() > 0) {
             MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
                 @Override
-                public void handle(String commitId, MatchPair matchPair) {
-                }
-
-                @Override
                 public void handleException(String commit, Exception e) {
                     System.err.println("Error processing commit " + commit);
                     e.printStackTrace(System.err);
