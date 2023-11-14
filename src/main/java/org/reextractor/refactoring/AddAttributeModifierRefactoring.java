@@ -1,5 +1,8 @@
 package org.reextractor.refactoring;
 
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.reextractor.util.AttributeUtils;
 import org.remapper.dto.DeclarationNodeTree;
 import org.remapper.dto.EntityType;
@@ -42,7 +45,7 @@ public class AddAttributeModifierRefactoring implements Refactoring {
         } else {
             sb.append(" in attribute ");
         }
-        sb.append(AttributeUtils.getVariableDeclaration(attributeAfter));
+        sb.append(AttributeUtils.getVariableDeclarationWithVisibility(attributeAfter));
         sb.append(" from class ");
         sb.append(attributeAfter.getNamespace());
         return sb.toString();

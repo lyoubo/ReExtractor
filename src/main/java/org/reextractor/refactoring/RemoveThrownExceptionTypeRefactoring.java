@@ -39,9 +39,9 @@ public class RemoveThrownExceptionTypeRefactoring implements Refactoring {
         sb.append(getName()).append("\t");
         sb.append(exceptionType.getName().getFullyQualifiedName());
         sb.append(" in method ");
-        sb.append(MethodUtils.getMethodDeclaration(operationAfter));
+        sb.append(MethodUtils.getMethodDeclaration(operationBefore));
         sb.append(" from class ");
-        sb.append(operationAfter.getNamespace());
+        sb.append(operationBefore.getNamespace());
         return sb.toString();
     }
 

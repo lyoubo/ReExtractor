@@ -7,6 +7,7 @@ import org.remapper.dto.DeclarationNodeTree;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class MethodUtils {
 
@@ -18,35 +19,26 @@ public class MethodUtils {
             if (statements.size() == 1) {
                 Statement statement = statements.get(0);
                 if (statement.toString().startsWith("return ")) {
-                    List<String> variables = new ArrayList<>();
-                    statement.accept(new ASTVisitor() {
-                        @Override
-                        public boolean visit(VariableDeclarationFragment node) {
-                            variables.add(node.getName().getIdentifier());
-                            return true;
-                        }
-                    });
-                    boolean parameterUsed = false;
-                    for (SingleVariableDeclaration parameter : parameters) {
-                        for (String variable : variables) {
-                            if (variable.equals(parameter.getName().getIdentifier())) {
-                                parameterUsed = true;
-                                break;
+                    ASTNode parent = methodDeclaration.getParent();
+                    if (parent instanceof TypeDeclaration) {
+                        TypeDeclaration typeDeclaration = (TypeDeclaration) parent;
+                        FieldDeclaration[] fields = typeDeclaration.getFields();
+                        for (FieldDeclaration fieldDeclaration : fields) {
+                            List<VariableDeclarationFragment> fragments = fieldDeclaration.fragments();
+                            for (VariableDeclarationFragment fragment : fragments) {
+                                if (statement.toString().equals("return " + fragment.getName().getIdentifier() + ";\n") && (parameters.size() == 0)) {
+                                    return true;
+                                } else if (statement.toString().equals("return " + fragment.getName().getIdentifier() + ".keySet()" + ";\n") && (parameters.size() == 0)) {
+                                    return true;
+                                } else if (statement.toString().equals("return " + fragment.getName().getIdentifier() + ".values()" + ";\n") && (parameters.size() == 0)) {
+                                    return true;
+                                }
                             }
-                        }
-                    }
-                    for (String variable : variables) {
-                        if (statement.toString().equals("return " + variable + ";\n") && (parameters.size() == 0 || !parameterUsed)) {
-                            return true;
-                        } else if (statement.toString().equals("return " + variable + ".keySet()" + ";\n") && (parameters.size() == 0 || !parameterUsed)) {
-                            return true;
-                        } else if (statement.toString().equals("return " + variable + ".values()" + ";\n") && (parameters.size() == 0 || !parameterUsed)) {
-                            return true;
                         }
                     }
                     String name = methodDeclaration.getName().getIdentifier();
                     Type returnType = methodDeclaration.getReturnType2();
-                    if ((name.startsWith("is") || name.startsWith("has")) && (parameters.size() == 0 || !parameterUsed) &&
+                    if ((name.startsWith("is") || name.startsWith("has")) && (parameters.size() == 0) &&
                             returnType != null && returnType.toString().equals("boolean")) {
                         return true;
                     }
@@ -66,17 +58,19 @@ public class MethodUtils {
             List<Statement> statements = body.statements();
             if (statements.size() == 1) {
                 Statement statement = statements.get(0);
-                List<String> variables = new ArrayList<>();
-                statement.accept(new ASTVisitor() {
-                    @Override
-                    public boolean visit(VariableDeclarationFragment node) {
-                        variables.add(node.getName().getIdentifier());
-                        return true;
-                    }
-                });
-                for (String variable : variables) {
-                    if (statement.toString().equals(variable + "=" + parameters.get(0).getName().getIdentifier() + ";\n")) {
-                        return true;
+                ASTNode parent = methodDeclaration.getParent();
+                if (parent instanceof TypeDeclaration) {
+                    TypeDeclaration typeDeclaration = (TypeDeclaration) parent;
+                    FieldDeclaration[] fields = typeDeclaration.getFields();
+                    for (FieldDeclaration fieldDeclaration : fields) {
+                        List<VariableDeclarationFragment> fragments = fieldDeclaration.fragments();
+                        for (VariableDeclarationFragment fragment : fragments) {
+                            if (statement.toString().equals(fragment.getName().getIdentifier() + "=" + parameters.get(0).getName().getIdentifier() + ";\n")) {
+                                return true;
+                            } else if (statement.toString().equals("this." + fragment.getName().getIdentifier() + "=" + parameters.get(0).getName().getIdentifier() + ";\n")) {
+                                return true;
+                            }
+                        }
                     }
                 }
             }
@@ -263,6 +257,24 @@ public class MethodUtils {
 
     private static boolean streamAPIName(String name) {
         return name.equals("stream") || name.equals("filter") || name.equals("forEach") || name.equals("collect") || name.equals("map") || name.equals("removeIf");
+    }
+
+    public static boolean isNewFunction(ASTNode oldFragment, ASTNode newFragment) {
+        if (oldFragment instanceof MethodDeclaration && newFragment instanceof MethodDeclaration) {
+            if (((MethodDeclaration) oldFragment).getBody() == null || ((MethodDeclaration) newFragment).getBody() == null)
+                return false;
+            String[] oldMethodLines = ((MethodDeclaration) oldFragment).getBody().toString().split("\n");
+            String[] newMethodLines = ((MethodDeclaration) newFragment).getBody().toString().split("\n");
+            int index = 0;
+            for (String newMethodLine : newMethodLines) {
+                if (Objects.equals(oldMethodLines[index], newMethodLine))
+                    index++;
+                if (index == oldMethodLines.length)
+                    return true;
+            }
+            return index == oldMethodLines.length;
+        }
+        return false;
     }
 }
 

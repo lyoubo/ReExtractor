@@ -21,8 +21,6 @@ public class AnnotationListDiff {
         annotationDiffs = new LinkedHashSet<>();
         List<Annotation> annotations1 = new ArrayList<>();
         List<Annotation> annotations2 = new ArrayList<>();
-        Set<Annotation> removedAnnotations = new LinkedHashSet<>();
-        Set<Annotation> addedAnnotations = new LinkedHashSet<>();
         for (IExtendedModifier modifier : modifiers1) {
             if (modifier.isAnnotation())
                 annotations1.add((Annotation) modifier);

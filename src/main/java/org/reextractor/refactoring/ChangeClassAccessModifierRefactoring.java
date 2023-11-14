@@ -42,7 +42,7 @@ public class ChangeClassAccessModifierRefactoring implements Refactoring {
         sb.append(" to ");
         sb.append(changedAccessModifier);
         sb.append(" in class ");
-        sb.append(classAfter.getNamespace());
+        sb.append(classAfter.getNamespace() + "." + classAfter.getName());
         return sb.toString();
     }
 

@@ -43,7 +43,7 @@ public class ChangeAttributeAccessModifierRefactoring implements Refactoring {
         sb.append(" to ");
         sb.append(changedAccessModifier);
         sb.append(" in attribute ");
-        sb.append(AttributeUtils.getVariableDeclaration(attributeAfter));
+        sb.append(AttributeUtils.getVariableDeclarationWithVisibility(attributeAfter));
         sb.append(" from class ");
         sb.append(attributeAfter.getNamespace());
         return sb.toString();

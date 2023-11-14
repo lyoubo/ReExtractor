@@ -24,7 +24,7 @@ public class RemoveVariableModifierRefactoring implements Refactoring {
     }
 
     public RefactoringType getRefactoringType() {
-        return RefactoringType.REMOVE_VARIABLE_ANNOTATION;
+        return RefactoringType.REMOVE_VARIABLE_MODIFIER;
     }
 
     public LocationInfo leftSide() {

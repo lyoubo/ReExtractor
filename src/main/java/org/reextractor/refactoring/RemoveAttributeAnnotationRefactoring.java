@@ -43,7 +43,7 @@ public class RemoveAttributeAnnotationRefactoring implements Refactoring {
         } else {
             sb.append(" in attribute ");
         }
-        sb.append(AttributeUtils.getVariableDeclaration(attributeBefore));
+        sb.append(AttributeUtils.getVariableDeclarationWithVisibility(attributeBefore));
         sb.append(" from class ");
         sb.append(attributeBefore.getNamespace());
         return sb.toString();

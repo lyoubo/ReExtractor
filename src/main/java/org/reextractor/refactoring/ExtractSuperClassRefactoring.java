@@ -35,9 +35,9 @@ public class ExtractSuperClassRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(extractedClass.getNamespace());
+        sb.append(extractedClass.getNamespace()).append(".").append(extractedClass.getName());
         sb.append(" from class ");
-        sb.append(originalClass.getNamespace());
+        sb.append(originalClass.getNamespace()).append(".").append(originalClass.getName());
         return sb.toString();
     }
 
