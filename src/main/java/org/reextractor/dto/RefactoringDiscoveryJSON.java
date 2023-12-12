@@ -63,6 +63,7 @@ public class RefactoringDiscoveryJSON {
         private final int endColumn;
         private final String codeElementType;
         private final String description;
+        private final String codeElement;
 
         public CodeRange(org.remapper.dto.CodeRange codeRange) {
             this.filePath = codeRange.getFilePath();
@@ -72,6 +73,7 @@ public class RefactoringDiscoveryJSON {
             this.endColumn = codeRange.getEndColumn();
             this.codeElementType = codeRange.getCodeElementType().name();
             this.description = codeRange.getDescription();
+            this.codeElement = codeRange.getCodeElement();
         }
     }
 }
