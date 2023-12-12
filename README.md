@@ -95,7 +95,6 @@ Currently, it supports the detection of the following refactorings:
 71. Change Loop Type *
 72. Merge Declaration and Assignment *
 73. Replace if with Ternary Operator *
-74. Replace switch with if *
 75. Loop Interchange *
 
 &nbsp;&nbsp;\* not supported by other refactoring detection tools
@@ -210,56 +209,126 @@ In both cases, you will get the output in JSON format:
             {
               "type": "MOVE_OPERATION",
               "description": "Move Method	public barkBark(manager DogManager) : void from class org.animals.Dog to public barkBark(dog Dog) : void from class org.DogManager",
-              "leftSideLocation": {
-                "filePath": "src/org/animals/Dog.java",
-                "startLine": 14,
-                "endLine": 21,
-                "startColumn": 2,
-                "endColumn": 3
-              },
-              "rightSideLocation": {
-                "filePath": "src/org/DogManager.java",
-                "startLine": 25,
-                "endLine": 32,
-                "startColumn": 2,
-                "endColumn": 3
-              }
+              "leftSideLocation": [
+                {
+                  "filePath": "src/org/animals/Dog.java",
+                  "startLine": 14,
+                  "endLine": 21,
+                  "startColumn": 2,
+                  "endColumn": 3,
+                  "codeElementType": "METHOD_DECLARATION",
+                  "description": "original method declaration",
+                  "codeElement": "public barkBark(manager DogManager) : void"
+                }
+              ],
+              "rightSideLocation": [
+                {
+                  "filePath": "src/org/DogManager.java",
+                  "startLine": 25,
+                  "endLine": 32,
+                  "startColumn": 2,
+                  "endColumn": 3,
+                  "codeElementType": "METHOD_DECLARATION",
+                  "description": "moved method declaration",
+                  "codeElement": "public barkBark(dog Dog) : void"
+                }
+              ]
             },
             {
               "type": "RENAME_PARAMETER",
               "description": "Rename Parameter	manager : DogManager to dog : Dog in method public barkBark(dog Dog) : void from class org.DogManager",
-              "leftSideLocation": {
-                "filePath": "src/org/animals/Dog.java",
-                "startLine": 14,
-                "endLine": 21,
-                "startColumn": 2,
-                "endColumn": 3
-              },
-              "rightSideLocation": {
-                "filePath": "src/org/DogManager.java",
-                "startLine": 25,
-                "endLine": 32,
-                "startColumn": 2,
-                "endColumn": 3
-              }
+              "leftSideLocation": [
+                {
+                  "filePath": "src/org/animals/Dog.java",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "startColumn": 23,
+                  "endColumn": 41,
+                  "codeElementType": "SINGLE_VARIABLE_DECLARATION",
+                  "description": "original variable declaration",
+                  "codeElement": "manager : DogManager"
+                },
+                {
+                  "filePath": "src/org/animals/Dog.java",
+                  "startLine": 14,
+                  "endLine": 21,
+                  "startColumn": 2,
+                  "endColumn": 3,
+                  "codeElementType": "METHOD_DECLARATION",
+                  "description": "original method declaration",
+                  "codeElement": "public barkBark(manager DogManager) : void"
+                }
+              ],
+              "rightSideLocation": [
+                {
+                  "filePath": "src/org/DogManager.java",
+                  "startLine": 25,
+                  "endLine": 25,
+                  "startColumn": 23,
+                  "endColumn": 30,
+                  "codeElementType": "SINGLE_VARIABLE_DECLARATION",
+                  "description": "renamed variable declaration",
+                  "codeElement": "dog : Dog"
+                },
+                {
+                  "filePath": "src/org/DogManager.java",
+                  "startLine": 25,
+                  "endLine": 32,
+                  "startColumn": 2,
+                  "endColumn": 3,
+                  "codeElementType": "METHOD_DECLARATION",
+                  "description": "method declaration with renamed variable",
+                  "codeElement": "public barkBark(dog Dog) : void"
+                }
+              ]
             },
             {
               "type": "CHANGE_PARAMETER_TYPE",
               "description": "Change Parameter Type	manager : DogManager to dog : Dog in method public barkBark(dog Dog) : void from class org.DogManager",
-              "leftSideLocation": {
-                "filePath": "src/org/animals/Dog.java",
-                "startLine": 14,
-                "endLine": 21,
-                "startColumn": 2,
-                "endColumn": 3
-              },
-              "rightSideLocation": {
-                "filePath": "src/org/DogManager.java",
-                "startLine": 25,
-                "endLine": 32,
-                "startColumn": 2,
-                "endColumn": 3
-              }
+              "leftSideLocation": [
+                {
+                  "filePath": "src/org/animals/Dog.java",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "startColumn": 23,
+                  "endColumn": 41,
+                  "codeElementType": "SINGLE_VARIABLE_DECLARATION",
+                  "description": "original variable declaration",
+                  "codeElement": "manager : DogManager"
+                },
+                {
+                  "filePath": "src/org/animals/Dog.java",
+                  "startLine": 14,
+                  "endLine": 21,
+                  "startColumn": 2,
+                  "endColumn": 3,
+                  "codeElementType": "METHOD_DECLARATION",
+                  "description": "original method declaration",
+                  "codeElement": "public barkBark(manager DogManager) : void"
+                }
+              ],
+              "rightSideLocation": [
+                {
+                  "filePath": "src/org/DogManager.java",
+                  "startLine": 25,
+                  "endLine": 25,
+                  "startColumn": 23,
+                  "endColumn": 30,
+                  "codeElementType": "SINGLE_VARIABLE_DECLARATION",
+                  "description": "changed-type variable declaration",
+                  "codeElement": "dog : Dog"
+                },
+                {
+                  "filePath": "src/org/DogManager.java",
+                  "startLine": 25,
+                  "endLine": 32,
+                  "startColumn": 2,
+                  "endColumn": 3,
+                  "codeElementType": "METHOD_DECLARATION",
+                  "description": "method declaration with changed variable type",
+                  "codeElement": "public barkBark(dog Dog) : void"
+                }
+              ]
             }
           ]
         }
@@ -275,7 +344,7 @@ To add ReExtractor as a maven dependency in your project, add the following snip
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>1.2.0</version>
+      <version>2.0.0</version>
     </dependency>
 
 # Tool
