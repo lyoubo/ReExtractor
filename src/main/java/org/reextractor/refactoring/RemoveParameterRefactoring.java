@@ -1,10 +1,15 @@
 package org.reextractor.refactoring;
 
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.reextractor.util.MethodUtils;
 import org.reextractor.util.VariableUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
 import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RemoveParameterRefactoring implements Refactoring {
 
@@ -22,12 +27,25 @@ public class RemoveParameterRefactoring implements Refactoring {
         return RefactoringType.REMOVE_PARAMETER;
     }
 
-    public LocationInfo leftSide() {
-        return operationBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        LocationInfo parameterLocation = new LocationInfo(
+                (CompilationUnit) parameter.getRoot(), operationBefore.getFilePath(), parameter);
+        ranges.add(parameterLocation.codeRange()
+                .setDescription("removed parameter")
+                .setCodeElement(VariableUtils.variable2String(parameter)));
+        ranges.add(operationBefore.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(operationBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return operationAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(operationAfter.codeRange()
+                .setDescription("method declaration with removed parameter")
+                .setCodeElement(MethodUtils.method2String(operationAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -37,9 +55,9 @@ public class RemoveParameterRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(VariableUtils.getVariableDeclaration(parameter));
+        sb.append(VariableUtils.variable2String(parameter));
         sb.append(" in method ");
-        sb.append(MethodUtils.getMethodDeclaration(operationBefore));
+        sb.append(MethodUtils.method2String(operationBefore));
         sb.append(" from class ");
         sb.append(operationBefore.getNamespace());
         return sb.toString();

@@ -1,10 +1,15 @@
 package org.reextractor.refactoring;
 
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.reextractor.util.MethodUtils;
 import org.reextractor.util.VariableUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
 import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeParameterTypeRefactoring implements Refactoring {
 
@@ -25,12 +30,30 @@ public class ChangeParameterTypeRefactoring implements Refactoring {
         return RefactoringType.CHANGE_PARAMETER_TYPE;
     }
 
-    public LocationInfo leftSide() {
-        return operationBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        LocationInfo variableLocation = new LocationInfo(
+                (CompilationUnit) originalVariable.getRoot(), operationBefore.getFilePath(), originalVariable);
+        ranges.add(variableLocation.codeRange()
+                .setDescription("original variable declaration")
+                .setCodeElement(VariableUtils.variable2String(originalVariable)));
+        ranges.add(operationBefore.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(operationBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return operationAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        LocationInfo variableLocation = new LocationInfo(
+                (CompilationUnit) changedTypeVariable.getRoot(), operationAfter.getFilePath(), changedTypeVariable);
+        ranges.add(variableLocation.codeRange()
+                .setDescription("changed-type variable declaration")
+                .setCodeElement(VariableUtils.variable2String(changedTypeVariable)));
+        ranges.add(operationAfter.codeRange()
+                .setDescription("method declaration with changed variable type")
+                .setCodeElement(MethodUtils.method2String(operationAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -40,11 +63,11 @@ public class ChangeParameterTypeRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(VariableUtils.getVariableDeclaration(originalVariable));
+        sb.append(VariableUtils.variable2String(originalVariable));
         sb.append(" to ");
-        sb.append(VariableUtils.getVariableDeclaration(changedTypeVariable));
+        sb.append(VariableUtils.variable2String(changedTypeVariable));
         sb.append(" in method ");
-        sb.append(MethodUtils.getMethodDeclaration(operationAfter));
+        sb.append(MethodUtils.method2String(operationAfter));
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();

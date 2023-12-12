@@ -3,7 +3,7 @@ package org.reextractor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.eclipse.jgit.lib.Repository;
-import org.reextractor.dto.RefactoringMiningJSON;
+import org.reextractor.dto.RefactoringDiscoveryJSON;
 import org.reextractor.handler.RefactoringHandler;
 import org.reextractor.refactoring.Refactoring;
 import org.reextractor.service.RefactoringExtractorService;
@@ -97,18 +97,18 @@ public class ReExtractor {
                 throw new RuntimeException(e);
             }
             try (BufferedWriter out = new BufferedWriter(new FileWriter(path.toFile()))) {
-                RefactoringMiningJSON results = new RefactoringMiningJSON();
+                RefactoringDiscoveryJSON results = new RefactoringDiscoveryJSON();
                 results.populateJSON(cloneURL, currentCommitId, url, refactorings);
-                String jsonString = gson.toJson(results, RefactoringMiningJSON.class).replace("\\t", "\t");
+                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class).replace("\\t", "\t");
                 out.write(jsonString);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
             try (FileReader reader = new FileReader(path.toFile())) {
-                RefactoringMiningJSON results = gson.fromJson(reader, RefactoringMiningJSON.class);
+                RefactoringDiscoveryJSON results = gson.fromJson(reader, RefactoringDiscoveryJSON.class);
                 results.populateJSON(cloneURL, currentCommitId, url, refactorings);
-                String jsonString = gson.toJson(results, RefactoringMiningJSON.class).replace("\\t", "\t");
+                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class).replace("\\t", "\t");
                 BufferedWriter out = new BufferedWriter(new FileWriter(path.toFile()));
                 out.write(jsonString);
                 out.close();

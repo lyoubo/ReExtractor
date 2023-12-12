@@ -4,20 +4,22 @@ import org.eclipse.jdt.core.dom.*;
 
 public class VariableUtils {
 
-    public static String getVariableDeclaration(VariableDeclaration variable) {
+    public static String variable2String(VariableDeclaration variableDeclaration) {
         StringBuilder sb = new StringBuilder();
-        sb.append(variable.getName().getIdentifier());
+        sb.append(variableDeclaration.getName().getIdentifier());
         sb.append(" : ");
-        if (variable instanceof SingleVariableDeclaration) {
-            sb.append(((SingleVariableDeclaration) variable).getType().toString());
-            if (((SingleVariableDeclaration) variable).isVarargs())
+        if (variableDeclaration instanceof SingleVariableDeclaration) {
+            sb.append(((SingleVariableDeclaration) variableDeclaration).getType().toString());
+            if (((SingleVariableDeclaration) variableDeclaration).isVarargs())
                 sb.append("...");
         } else {
-            ASTNode parent = variable.getParent();
+            ASTNode parent = variableDeclaration.getParent();
             if (parent instanceof VariableDeclarationStatement) {
                 sb.append(((VariableDeclarationStatement) parent).getType().toString());
             } else if (parent instanceof VariableDeclarationExpression) {
                 sb.append(((VariableDeclarationExpression) parent).getType().toString());
+            } else if (parent instanceof LambdaExpression) {
+                sb.append("null");
             } else {
                 sb.append("null");
             }

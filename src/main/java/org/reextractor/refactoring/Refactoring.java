@@ -1,14 +1,16 @@
 package org.reextractor.refactoring;
 
-import org.remapper.dto.LocationInfo;
+import org.remapper.dto.CodeRange;
+
+import java.util.List;
 
 public interface Refactoring {
 
     RefactoringType getRefactoringType();
 
-    LocationInfo leftSide();
+    List<CodeRange> leftSide();
 
-    LocationInfo rightSide();
+    List<CodeRange> rightSide();
 
     public String getName();
 

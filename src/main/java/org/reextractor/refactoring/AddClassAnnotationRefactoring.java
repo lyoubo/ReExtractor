@@ -1,9 +1,15 @@
 package org.reextractor.refactoring;
 
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.reextractor.util.AnnotationUtils;
+import org.reextractor.util.ClassUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
 import org.remapper.dto.LocationInfo;
-import org.remapper.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AddClassAnnotationRefactoring implements Refactoring {
 
@@ -21,12 +27,25 @@ public class AddClassAnnotationRefactoring implements Refactoring {
         return RefactoringType.ADD_CLASS_ANNOTATION;
     }
 
-    public LocationInfo leftSide() {
-        return classBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(this.classBefore.codeRange()
+                .setDescription("original class declaration")
+                .setCodeElement(ClassUtils.typeDeclaration2String(classBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return classAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        LocationInfo annotationLocation = new LocationInfo(
+                (CompilationUnit) annotation.getRoot(), classAfter.getFilePath(), annotation);
+        ranges.add(annotationLocation.codeRange()
+                .setDescription("added annotation")
+                .setCodeElement(AnnotationUtils.annotation2String(annotation)));
+        ranges.add(this.classAfter.codeRange()
+                .setDescription("class declaration with added annotation")
+                .setCodeElement(ClassUtils.typeDeclaration2String(classAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -36,12 +55,9 @@ public class AddClassAnnotationRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(annotation.toString());
+        sb.append(AnnotationUtils.annotation2String(annotation));
         sb.append(" in class ");
-        if (StringUtils.isNotEmpty(classAfter.getNamespace()))
-            sb.append(classAfter.getNamespace()).append(".").append(classAfter.getName());
-        else
-            sb.append(classAfter.getName());
+        sb.append(ClassUtils.typeDeclaration2String(classAfter));
         return sb.toString();
     }
 

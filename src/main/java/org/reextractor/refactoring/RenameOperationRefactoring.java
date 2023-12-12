@@ -2,8 +2,11 @@ package org.reextractor.refactoring;
 
 import org.reextractor.util.MethodUtils;
 import org.reextractor.util.StringUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RenameOperationRefactoring implements Refactoring {
 
@@ -19,12 +22,20 @@ public class RenameOperationRefactoring implements Refactoring {
         return RefactoringType.RENAME_METHOD;
     }
 
-    public LocationInfo leftSide() {
-        return originalOperation.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(originalOperation.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(originalOperation)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return renamedOperation.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(renamedOperation.codeRange()
+                .setDescription("renamed method declaration")
+                .setCodeElement(MethodUtils.method2String(renamedOperation)));
+        return ranges;
     }
 
     public String getName() {
@@ -34,9 +45,9 @@ public class RenameOperationRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(MethodUtils.getMethodDeclaration(originalOperation));
+        sb.append(MethodUtils.method2String(originalOperation));
         sb.append(" renamed to ");
-        sb.append(MethodUtils.getMethodDeclaration(renamedOperation));
+        sb.append(MethodUtils.method2String(renamedOperation));
         sb.append(" in class ").append(getClassName());
         return sb.toString();
     }

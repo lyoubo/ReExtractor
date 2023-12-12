@@ -1,8 +1,11 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.MethodUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MoveOperationRefactoring implements Refactoring {
 
@@ -18,12 +21,20 @@ public class MoveOperationRefactoring implements Refactoring {
         return RefactoringType.MOVE_OPERATION;
     }
 
-    public LocationInfo leftSide() {
-        return originalOperation.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(originalOperation.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(originalOperation)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return movedOperation.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(movedOperation.codeRange()
+                .setDescription("moved method declaration")
+                .setCodeElement(MethodUtils.method2String(movedOperation)));
+        return ranges;
     }
 
     public String getName() {
@@ -33,11 +44,11 @@ public class MoveOperationRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(MethodUtils.getMethodDeclaration(originalOperation));
+        sb.append(MethodUtils.method2String(originalOperation));
         sb.append(" from class ");
         sb.append(getSourceClassName());
         sb.append(" to ");
-        sb.append(MethodUtils.getMethodDeclaration(movedOperation));
+        sb.append(MethodUtils.method2String(movedOperation));
         sb.append(" from class ");
         sb.append(getTargetClassName());
         return sb.toString();

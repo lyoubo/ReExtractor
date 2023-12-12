@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.Test;
-import org.reextractor.dto.RefactoringMiningJSON;
+import org.reextractor.dto.RefactoringDiscoveryJSON;
 import org.reextractor.handler.RefactoringHandler;
 import org.reextractor.refactoring.Refactoring;
 import org.reextractor.service.RefactoringExtractorService;
@@ -25,8 +25,8 @@ public class ReExtractorTest {
 
     @Test
     public void detectAtCommit() throws Exception {
-        String folder = "E:/refactoring-toy-example";
-        String commitId = "d4bce13a443cf12da40a77c16c1e591f4f985b47";
+        String folder = "E:\\commons-math";
+        String commitId = "482ebca8f54c6d1c6ef3d07710d0717334bc0eee";
         GitService gitService = new GitServiceImpl();
         try (Repository repo = gitService.openRepository(folder)) {
             String gitURL = GitServiceImpl.getRemoteUrl(folder);
@@ -61,18 +61,18 @@ public class ReExtractorTest {
                 throw new RuntimeException(e);
             }
             try (BufferedWriter out = new BufferedWriter(new FileWriter(path.toFile()))) {
-                RefactoringMiningJSON results = new RefactoringMiningJSON();
+                RefactoringDiscoveryJSON results = new RefactoringDiscoveryJSON();
                 results.populateJSON(cloneURL, currentCommitId, url, refactorings);
-                String jsonString = gson.toJson(results, RefactoringMiningJSON.class).replace("\\t", "\t");
+                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class).replace("\\t", "\t");
                 out.write(jsonString);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
             try (FileReader reader = new FileReader(path.toFile())) {
-                RefactoringMiningJSON results = gson.fromJson(reader, RefactoringMiningJSON.class);
+                RefactoringDiscoveryJSON results = gson.fromJson(reader, RefactoringDiscoveryJSON.class);
                 results.populateJSON(cloneURL, currentCommitId, url, refactorings);
-                String jsonString = gson.toJson(results, RefactoringMiningJSON.class).replace("\\t", "\t");
+                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class).replace("\\t", "\t");
                 BufferedWriter out = new BufferedWriter(new FileWriter(path.toFile()));
                 out.write(jsonString);
                 out.close();

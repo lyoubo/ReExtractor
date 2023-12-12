@@ -1,31 +1,52 @@
 package org.reextractor.refactoring;
 
+import org.reextractor.util.ClassUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ExtractInterfaceRefactoring implements Refactoring {
 
     private DeclarationNodeTree extractedClass;
-    private DeclarationNodeTree originalClass;
-    private DeclarationNodeTree nextClass;
+    private Set<DeclarationNodeTree> subclassSetBefore;
+    private Set<DeclarationNodeTree> subclassSetAfter;
 
-    public ExtractInterfaceRefactoring(DeclarationNodeTree originalClass, DeclarationNodeTree nextClass,
-                                       DeclarationNodeTree extractedClass) {
-        this.originalClass = originalClass;
-        this.nextClass = nextClass;
+    public ExtractInterfaceRefactoring(DeclarationNodeTree extractedClass, Set<DeclarationNodeTree> subclassSetBefore,
+                                        Set<DeclarationNodeTree> subclassSetAfter) {
         this.extractedClass = extractedClass;
+        this.subclassSetBefore = subclassSetBefore;
+        this.subclassSetAfter = subclassSetAfter;
     }
 
     public RefactoringType getRefactoringType() {
         return RefactoringType.EXTRACT_INTERFACE;
     }
 
-    public LocationInfo leftSide() {
-        return originalClass.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        for (DeclarationNodeTree subclass : subclassSetBefore) {
+            ranges.add(subclass.codeRange()
+                    .setDescription("original sub-type declaration")
+                    .setCodeElement(ClassUtils.typeDeclaration2String(subclass)));
+        }
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return extractedClass.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        for (DeclarationNodeTree subclass : subclassSetAfter) {
+            ranges.add(subclass.codeRange()
+                    .setDescription("sub-type declaration after extraction")
+                    .setCodeElement(ClassUtils.typeDeclaration2String(subclass)));
+        }
+        ranges.add(extractedClass.codeRange()
+                .setDescription("extracted super-type declaration")
+                .setCodeElement(ClassUtils.typeDeclaration2String(extractedClass)));
+        return ranges;
     }
 
     public String getName() {
@@ -35,9 +56,14 @@ public class ExtractInterfaceRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(extractedClass.getNamespace()).append(".").append(extractedClass.getName());
-        sb.append(" from class ");
-        sb.append(originalClass.getNamespace()).append(".").append(originalClass.getName());
+        sb.append(ClassUtils.typeDeclaration2String(extractedClass));
+        sb.append(" from classes [");
+        for (DeclarationNodeTree subclass : subclassSetBefore) {
+            sb.append(ClassUtils.typeDeclaration2String(subclass));
+            sb.append(",");
+        }
+        sb.delete(sb.length() - 1, sb.length());
+        sb.append("]");
         return sb.toString();
     }
 
@@ -45,11 +71,27 @@ public class ExtractInterfaceRefactoring implements Refactoring {
         return extractedClass;
     }
 
-    public DeclarationNodeTree getOriginalClass() {
-        return originalClass;
+    public Set<String> getSubclassSetBefore() {
+        Set<String> subclassSet = new LinkedHashSet<String>();
+        for (DeclarationNodeTree umlClass : this.subclassSetBefore) {
+            subclassSet.add(umlClass.getNamespace() + "." + umlClass.getName());
+        }
+        return subclassSet;
     }
 
-    public DeclarationNodeTree getNextClass() {
-        return nextClass;
+    public Set<DeclarationNodeTree> getUMLSubclassSetBefore() {
+        return new LinkedHashSet<DeclarationNodeTree>(subclassSetBefore);
+    }
+
+    public Set<String> getSubclassSetAfter() {
+        Set<String> subclassSet = new LinkedHashSet<String>();
+        for (DeclarationNodeTree umlClass : this.subclassSetAfter) {
+            subclassSet.add(umlClass.getNamespace() + "." + umlClass.getName());
+        }
+        return subclassSet;
+    }
+
+    public Set<DeclarationNodeTree> getUMLSubclassSetAfter() {
+        return new LinkedHashSet<DeclarationNodeTree>(subclassSetAfter);
     }
 }

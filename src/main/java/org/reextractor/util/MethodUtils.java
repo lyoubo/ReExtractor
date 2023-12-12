@@ -78,7 +78,7 @@ public class MethodUtils {
         return false;
     }
 
-    public static String getMethodDeclaration(DeclarationNodeTree method) {
+    public static String method2String(DeclarationNodeTree method) {
         MethodDeclaration methodDeclaration = (MethodDeclaration) method.getDeclaration();
         StringBuilder sb = new StringBuilder();
         int methodModifiers = methodDeclaration.getModifiers();

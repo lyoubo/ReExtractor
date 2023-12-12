@@ -1,8 +1,11 @@
 package org.reextractor.refactoring;
 
+import org.reextractor.util.ClassUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
-import org.remapper.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeTypeDeclarationKindRefactoring implements Refactoring {
 
@@ -18,12 +21,20 @@ public class ChangeTypeDeclarationKindRefactoring implements Refactoring {
         return RefactoringType.CHANGE_TYPE_DECLARATION_KIND;
     }
 
-    public LocationInfo leftSide() {
-        return classBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(classBefore.codeRange()
+                .setDescription("original class declaration")
+                .setCodeElement(ClassUtils.typeDeclaration2String(classBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return classAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(classAfter.codeRange()
+                .setDescription("class declaration with changed type declaration kind")
+                .setCodeElement(ClassUtils.typeDeclaration2String(classAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -37,10 +48,7 @@ public class ChangeTypeDeclarationKindRefactoring implements Refactoring {
         sb.append(" to ");
         sb.append(classAfter.getType().getName());
         sb.append(" in type ");
-        if (StringUtils.isNotEmpty(classAfter.getNamespace()))
-            sb.append(classAfter.getNamespace()).append(".").append(classAfter.getName());
-        else
-            sb.append(classAfter.getName());
+        sb.append(ClassUtils.typeDeclaration2String(classAfter));
         return sb.toString();
     }
 

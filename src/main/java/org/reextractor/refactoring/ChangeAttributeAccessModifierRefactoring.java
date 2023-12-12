@@ -2,8 +2,11 @@ package org.reextractor.refactoring;
 
 import org.reextractor.dto.Visibility;
 import org.reextractor.util.AttributeUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeAttributeAccessModifierRefactoring implements Refactoring {
 
@@ -24,12 +27,20 @@ public class ChangeAttributeAccessModifierRefactoring implements Refactoring {
         return RefactoringType.CHANGE_ATTRIBUTE_ACCESS_MODIFIER;
     }
 
-    public LocationInfo leftSide() {
-        return attributeBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(attributeBefore.codeRange()
+                .setDescription("original attribute declaration")
+                .setCodeElement(AttributeUtils.attribute2String(attributeBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return attributeAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(attributeAfter.codeRange()
+                .setDescription("attribute declaration with changed access modifier")
+                .setCodeElement(AttributeUtils.attribute2String(attributeAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -43,7 +54,7 @@ public class ChangeAttributeAccessModifierRefactoring implements Refactoring {
         sb.append(" to ");
         sb.append(changedAccessModifier);
         sb.append(" in attribute ");
-        sb.append(AttributeUtils.getVariableDeclarationWithVisibility(attributeAfter));
+        sb.append(AttributeUtils.attribute2String(attributeAfter));
         sb.append(" from class ");
         sb.append(attributeAfter.getNamespace());
         return sb.toString();

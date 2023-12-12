@@ -1,19 +1,24 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.MethodUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+import org.remapper.dto.StatementNodeTree;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class MergeConditionalRefactoring implements Refactoring {
 
-    private Set<String> mergedConditionals;
-    private String newConditional;
+    private Set<StatementNodeTree> mergedConditionals;
+    private StatementNodeTree newConditional;
     private DeclarationNodeTree operationBefore;
     private DeclarationNodeTree operationAfter;
 
-    public MergeConditionalRefactoring(Set<String> mergedConditionals, String newConditional,
+    public MergeConditionalRefactoring(Set<StatementNodeTree> mergedConditionals, StatementNodeTree newConditional,
                                        DeclarationNodeTree operationBefore, DeclarationNodeTree operationAfter) {
         this.mergedConditionals = mergedConditionals;
         this.newConditional = newConditional;
@@ -25,12 +30,28 @@ public class MergeConditionalRefactoring implements Refactoring {
         return RefactoringType.MERGE_CONDITIONAL;
     }
 
-    public LocationInfo leftSide() {
-        return operationBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        for (StatementNodeTree mergedConditional : mergedConditionals) {
+            ranges.add(mergedConditional.codeRange()
+                    .setDescription("merged conditional")
+                    .setCodeElement(mergedConditional.getExpression()));
+        }
+        ranges.add(operationBefore.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(operationBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return operationAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(newConditional.codeRange()
+                .setDescription("new conditional")
+                .setCodeElement(newConditional.getExpression()));
+        ranges.add(operationAfter.codeRange()
+                .setDescription("method declaration with merged conditional")
+                .setCodeElement(MethodUtils.method2String(operationAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -42,28 +63,28 @@ public class MergeConditionalRefactoring implements Refactoring {
         sb.append(getName()).append("\t");
         sb.append("[");
         int len = 0;
-        for (String mergedConditional : mergedConditionals) {
-            sb.append(mergedConditional);
+        for (StatementNodeTree mergedConditional : mergedConditionals) {
+            sb.append(mergedConditional.getExpression());
             if (len < mergedConditionals.size() - 1)
                 sb.append(", ");
             len++;
         }
         sb.append("]");
         sb.append(" to ");
-        sb.append(newConditional);
+        sb.append(newConditional.getExpression());
         sb.append(" in method ");
-        sb.append(MethodUtils.getMethodDeclaration(operationAfter));
+        sb.append(MethodUtils.method2String(operationAfter));
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();
     }
 
     public Set<String> getMergedConditionals() {
-        return mergedConditionals;
+        return mergedConditionals.stream().map(StatementNodeTree::getExpression).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public String getNewConditional() {
-        return newConditional;
+        return newConditional.getExpression();
     }
 
     public DeclarationNodeTree getOperationBefore() {

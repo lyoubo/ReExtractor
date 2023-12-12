@@ -1,8 +1,11 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.AttributeUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MoveAndRenameAttributeRefactoring implements Refactoring {
 
@@ -18,12 +21,20 @@ public class MoveAndRenameAttributeRefactoring implements Refactoring {
         return RefactoringType.MOVE_RENAME_ATTRIBUTE;
     }
 
-    public LocationInfo leftSide() {
-        return originalAttribute.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(originalAttribute.codeRange()
+                .setDescription("original attribute declaration")
+                .setCodeElement(AttributeUtils.attribute2String(originalAttribute)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return movedAttribute.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(movedAttribute.codeRange()
+                .setDescription("moved attribute declaration")
+                .setCodeElement(AttributeUtils.attribute2String(movedAttribute)));
+        return ranges;
     }
 
     public String getName() {
@@ -33,9 +44,9 @@ public class MoveAndRenameAttributeRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(AttributeUtils.getVariableDeclaration(originalAttribute));
+        sb.append(AttributeUtils.attribute2String(originalAttribute));
         sb.append(" renamed to ");
-        sb.append(AttributeUtils.getVariableDeclaration(movedAttribute));
+        sb.append(AttributeUtils.attribute2String(movedAttribute));
         sb.append(" and moved from class ");
         sb.append(getSourceClassName());
         sb.append(" to class ");

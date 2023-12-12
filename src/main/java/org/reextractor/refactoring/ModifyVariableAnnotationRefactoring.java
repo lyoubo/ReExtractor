@@ -1,11 +1,17 @@
 package org.reextractor.refactoring;
 
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
+import org.reextractor.util.AnnotationUtils;
 import org.reextractor.util.MethodUtils;
 import org.reextractor.util.VariableUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
 import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ModifyVariableAnnotationRefactoring implements Refactoring {
 
@@ -30,12 +36,40 @@ public class ModifyVariableAnnotationRefactoring implements Refactoring {
         return RefactoringType.MODIFY_VARIABLE_ANNOTATION;
     }
 
-    public LocationInfo leftSide() {
-        return operationBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        LocationInfo annotationLocation = new LocationInfo(
+                (CompilationUnit) annotationBefore.getRoot(), operationBefore.getFilePath(), annotationBefore);
+        ranges.add(annotationLocation.codeRange()
+                .setDescription("original annotation")
+                .setCodeElement(AnnotationUtils.annotation2String(annotationBefore)));
+        LocationInfo variableLocation = new LocationInfo(
+                (CompilationUnit) variableBefore.getRoot(), operationBefore.getFilePath(), variableBefore);
+        ranges.add(variableLocation.codeRange()
+                .setDescription("original variable declaration")
+                .setCodeElement(VariableUtils.variable2String(variableBefore)));
+        ranges.add(operationBefore.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(operationBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return operationAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        LocationInfo annotationLocation = new LocationInfo(
+                (CompilationUnit) annotationAfter.getRoot(), operationAfter.getFilePath(), annotationAfter);
+        ranges.add(annotationLocation.codeRange()
+                .setDescription("modified annotation")
+                .setCodeElement(AnnotationUtils.annotation2String(annotationAfter)));
+        LocationInfo variableLocation = new LocationInfo(
+                (CompilationUnit) variableAfter.getRoot(), operationAfter.getFilePath(), variableAfter);
+        ranges.add(variableLocation.codeRange()
+                .setDescription("variable declaration with modified annotation")
+                .setCodeElement(VariableUtils.variable2String(variableAfter)));
+        ranges.add(operationBefore.codeRange()
+                .setDescription("method declaration with modified variable annotation")
+                .setCodeElement(MethodUtils.method2String(operationAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -45,13 +79,13 @@ public class ModifyVariableAnnotationRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(annotationBefore.toString());
+        sb.append(AnnotationUtils.annotation2String(annotationBefore));
         sb.append(" to ");
-        sb.append(annotationAfter.toString());
+        sb.append(AnnotationUtils.annotation2String(annotationAfter));
         sb.append(" in variable ");
-        sb.append(VariableUtils.getVariableDeclaration(variableAfter));
+        sb.append(VariableUtils.variable2String(variableAfter));
         sb.append(" in method ");
-        sb.append(MethodUtils.getMethodDeclaration(operationAfter));
+        sb.append(MethodUtils.method2String(operationAfter));
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();

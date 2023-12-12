@@ -1,8 +1,12 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.dto.Visibility;
+import org.reextractor.util.ClassUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeClassAccessModifierRefactoring implements Refactoring {
 
@@ -23,12 +27,20 @@ public class ChangeClassAccessModifierRefactoring implements Refactoring {
         return RefactoringType.CHANGE_CLASS_ACCESS_MODIFIER;
     }
 
-    public LocationInfo leftSide() {
-        return classBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(classBefore.codeRange()
+                .setDescription("original class declaration")
+                .setCodeElement(ClassUtils.typeDeclaration2String(classBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return classAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(classAfter.codeRange()
+                .setDescription("class declaration with changed access modifier")
+                .setCodeElement(ClassUtils.typeDeclaration2String(classAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -42,7 +54,7 @@ public class ChangeClassAccessModifierRefactoring implements Refactoring {
         sb.append(" to ");
         sb.append(changedAccessModifier);
         sb.append(" in class ");
-        sb.append(classAfter.getNamespace() + "." + classAfter.getName());
+        sb.append(ClassUtils.typeDeclaration2String(classAfter));
         return sb.toString();
     }
 

@@ -1,9 +1,12 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.AttributeUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
 import org.remapper.dto.EntityType;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RemoveAttributeModifierRefactoring implements Refactoring {
 
@@ -21,12 +24,20 @@ public class RemoveAttributeModifierRefactoring implements Refactoring {
         return RefactoringType.REMOVE_ATTRIBUTE_MODIFIER;
     }
 
-    public LocationInfo leftSide() {
-        return attributeBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(attributeBefore.codeRange()
+                .setDescription("original attribute declaration")
+                .setCodeElement(AttributeUtils.attribute2String(attributeBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return attributeAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(attributeAfter.codeRange()
+                .setDescription("attribute declaration with removed modifier")
+                .setCodeElement(AttributeUtils.attribute2String(attributeAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -42,7 +53,7 @@ public class RemoveAttributeModifierRefactoring implements Refactoring {
         } else {
             sb.append(" in attribute ");
         }
-        sb.append(AttributeUtils.getVariableDeclarationWithVisibility(attributeBefore));
+        sb.append(AttributeUtils.attribute2String(attributeBefore));
         sb.append(" from class ");
         sb.append(attributeBefore.getNamespace());
         return sb.toString();

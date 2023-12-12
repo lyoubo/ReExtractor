@@ -1,8 +1,11 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.AttributeUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeAttributeTypeRefactoring implements Refactoring {
 
@@ -18,12 +21,20 @@ public class ChangeAttributeTypeRefactoring implements Refactoring {
         return RefactoringType.CHANGE_ATTRIBUTE_TYPE;
     }
 
-    public LocationInfo leftSide() {
-        return originalAttribute.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(originalAttribute.codeRange()
+                .setDescription("original attribute declaration")
+                .setCodeElement(AttributeUtils.attribute2String(originalAttribute)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return changedTypeAttribute.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(changedTypeAttribute.codeRange()
+                .setDescription("changed-type attribute declaration")
+                .setCodeElement(AttributeUtils.attribute2String(changedTypeAttribute)));
+        return ranges;
     }
 
     public String getName() {
@@ -33,9 +44,9 @@ public class ChangeAttributeTypeRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(AttributeUtils.getVariableDeclaration(originalAttribute));
+        sb.append(AttributeUtils.attribute2String(originalAttribute));
         sb.append(" to ");
-        sb.append(AttributeUtils.getVariableDeclaration(changedTypeAttribute));
+        sb.append(AttributeUtils.attribute2String(changedTypeAttribute));
         sb.append(" in class ").append(changedTypeAttribute.getNamespace());
         return sb.toString();
     }

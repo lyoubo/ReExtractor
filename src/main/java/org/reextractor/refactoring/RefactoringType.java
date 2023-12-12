@@ -104,7 +104,7 @@ public enum RefactoringType {
     SPLIT_OPERATION("Split Method", "Split Method (.+) to \\[(.+)\\] in class (.+)"),
     CHANGE_LOOP_TYPE("Change Loop Type", "Change Loop Type (.+) to (.+) in method (.+) from class (.+)"),
     MERGE_DECLARATION_AND_ASSIGNMENT("Merge Declaration And Assignment", "Merge Declaration And Assignment \\[(.+)\\] to (.+) in method (.+) from class (.+)"),
-    REPLACE_IF_WITH_TERNARY("Replace If With Ternary", "Replace If With Ternary (.+) with (.+) in method (.+) from class (.+)"),
+    REPLACE_IF_ELSE_WITH_TERNARY("Replace If Else With Ternary", "Replace If Else With Ternary (.+) with (.+) in method (.+) from class (.+)"),
     REPLACE_SWITCH_WITH_IF("Replace Switch With If", "Replace Switch With If (.+) with (.+) in method (.+) from class (.+)"),
     LOOP_INTERCHANGE("Loop Interchange", "Loop Interchange (.+) to (.+) in method (.+) from class (.+)");
 
@@ -210,7 +210,7 @@ public enum RefactoringType {
             SPLIT_OPERATION,
             CHANGE_LOOP_TYPE,
             MERGE_DECLARATION_AND_ASSIGNMENT,
-            REPLACE_IF_WITH_TERNARY,
+            REPLACE_IF_ELSE_WITH_TERNARY,
             REPLACE_SWITCH_WITH_IF,
             LOOP_INTERCHANGE
     };

@@ -1,8 +1,11 @@
 package org.reextractor.refactoring;
 
+import org.reextractor.util.ClassUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
-import org.remapper.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RenameClassRefactoring implements Refactoring {
 
@@ -18,12 +21,20 @@ public class RenameClassRefactoring implements Refactoring {
         return RefactoringType.RENAME_CLASS;
     }
 
-    public LocationInfo leftSide() {
-        return originalClass.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(originalClass.codeRange()
+                .setDescription("original type declaration")
+                .setCodeElement(ClassUtils.typeDeclaration2String(originalClass)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return renamedClass.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(renamedClass.codeRange()
+                .setDescription("renamed type declaration")
+                .setCodeElement(ClassUtils.typeDeclaration2String(renamedClass)));
+        return ranges;
     }
 
     public String getName() {
@@ -33,15 +44,9 @@ public class RenameClassRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        if (StringUtils.isNotEmpty(originalClass.getNamespace()))
-            sb.append(originalClass.getNamespace()).append(".").append(originalClass.getName());
-        else
-            sb.append(originalClass.getName());
+        sb.append(ClassUtils.typeDeclaration2String(originalClass));
         sb.append(" renamed to ");
-        if (StringUtils.isNotEmpty(renamedClass.getNamespace()))
-            sb.append(renamedClass.getNamespace()).append(".").append(renamedClass.getName());
-        else
-            sb.append(renamedClass.getName());
+        sb.append(ClassUtils.typeDeclaration2String(renamedClass));
         return sb.toString();
     }
 

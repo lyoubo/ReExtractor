@@ -1,8 +1,11 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.MethodUtils;
+import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RemoveMethodModifierRefactoring implements Refactoring {
 
@@ -20,12 +23,20 @@ public class RemoveMethodModifierRefactoring implements Refactoring {
         return RefactoringType.REMOVE_METHOD_MODIFIER;
     }
 
-    public LocationInfo leftSide() {
-        return operationBefore.getLocation();
+    public List<CodeRange> leftSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(operationBefore.codeRange()
+                .setDescription("original method declaration")
+                .setCodeElement(MethodUtils.method2String(operationBefore)));
+        return ranges;
     }
 
-    public LocationInfo rightSide() {
-        return operationAfter.getLocation();
+    public List<CodeRange> rightSide() {
+        List<CodeRange> ranges = new ArrayList<>();
+        ranges.add(operationAfter.codeRange()
+                .setDescription("method declaration with removed modifier")
+                .setCodeElement(MethodUtils.method2String(operationAfter)));
+        return ranges;
     }
 
     public String getName() {
@@ -37,7 +48,7 @@ public class RemoveMethodModifierRefactoring implements Refactoring {
         sb.append(getName()).append("\t");
         sb.append(modifier);
         sb.append(" in method ");
-        sb.append(MethodUtils.getMethodDeclaration(operationBefore));
+        sb.append(MethodUtils.method2String(operationBefore));
         sb.append(" from class ");
         sb.append(operationBefore.getNamespace());
         return sb.toString();
