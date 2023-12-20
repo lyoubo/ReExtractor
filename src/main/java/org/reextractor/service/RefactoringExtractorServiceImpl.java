@@ -1,5 +1,6 @@
 package org.reextractor.service;
 
+import com.google.gson.stream.JsonToken;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.dom.*;
@@ -252,8 +253,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         });
         for (MethodDeclaration oldMethod : oldMethods) {
             for (MethodDeclaration newMethod : newMethods) {
+                originalType = oldMethod.getReturnType2() == null ? "" : oldMethod.getReturnType2().toString();
+                changedType = newMethod.getReturnType2() == null ? "" : newMethod.getReturnType2().toString();
                 if (oldMethod.getName().getIdentifier().equals(newMethod.getName().getIdentifier()) &&
-                        oldMethod.getReturnType2().toString().equals(newMethod.getReturnType2().toString()) &&
+                        StringUtils.equals(originalType, changedType) &&
                         oldMethod.parameters().size() == newMethod.parameters().size() && equalsParameters(oldMethod, newMethod)) {
                     DeclarationNodeTree leftEntity = new LeafNode((CompilationUnit) oldMethod.getRoot(), oldEntity.getLocationInfo().getFilePath(), oldMethod);
                     DeclarationNodeTree rightEntity = new LeafNode((CompilationUnit) newMethod.getRoot(), newEntity.getLocationInfo().getFilePath(), newMethod);
@@ -1089,8 +1092,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                 });
                 for (MethodDeclaration oldMethod : oldMethods) {
                     for (MethodDeclaration newMethod : newMethods) {
+                        String originalType = oldMethod.getReturnType2() == null ? "" : oldMethod.getReturnType2().toString();
+                        String changedType = newMethod.getReturnType2() == null ? "" : newMethod.getReturnType2().toString();
                         if (oldMethod.getName().getIdentifier().equals(newMethod.getName().getIdentifier()) &&
-                                oldMethod.getReturnType2().toString().equals(newMethod.getReturnType2().toString()) &&
+                                StringUtils.equals(originalType, changedType) &&
                                 oldMethod.parameters().size() == newMethod.parameters().size() && equalsParameters(oldMethod, newMethod)) {
                             DeclarationNodeTree leftEntity = new LeafNode((CompilationUnit) oldMethod.getRoot(), oldStatement.getLocationInfo().getFilePath(), oldMethod);
                             DeclarationNodeTree rightEntity = new LeafNode((CompilationUnit) newMethod.getRoot(), newStatement.getLocationInfo().getFilePath(), newMethod);
