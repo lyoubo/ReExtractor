@@ -1,6 +1,5 @@
 package org.reextractor.service;
 
-import com.google.gson.stream.JsonToken;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.dom.*;
@@ -162,8 +161,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         }
     }
 
-    private void processOperations(boolean isMove, Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities, DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity,
-                                   List<Refactoring> refactorings) {
+    private void processOperations(boolean isMove, Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
+                                   DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity, List<Refactoring> refactorings) {
         MethodDeclaration removedOperation = (MethodDeclaration) oldEntity.getDeclaration();
         MethodDeclaration addedOperation = (MethodDeclaration) newEntity.getDeclaration();
         if (isMove) {
@@ -455,7 +454,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         }
     }
 
-    private void checkForOperationParameterChanges(DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity, List<Refactoring> refactorings) {
+    private void checkForOperationParameterChanges(DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity,
+                                                   List<Refactoring> refactorings) {
         MethodDeclaration removedOperation = (MethodDeclaration) oldEntity.getDeclaration();
         MethodDeclaration addedOperation = (MethodDeclaration) newEntity.getDeclaration();
         List<SingleVariableDeclaration> addedParameters = new ArrayList<>();
@@ -566,6 +566,28 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         break;
                     }
                 }
+            }
+        }
+
+        //fourth round match parameters with the same type
+        if (removedParameters.size() == addedParameters.size()) {
+            boolean sameType = true;
+            for (int i = 0; i < removedParameters.size(); i++) {
+                SingleVariableDeclaration removedParameter = removedParameters.get(i);
+                SingleVariableDeclaration addedParameter = addedParameters.get(i);
+                if (!removedParameter.getType().toString().equals(addedParameter.getType().toString())) {
+                    sameType = false;
+                    break;
+                }
+            }
+            if (sameType) {
+                for (int i = 0; i < removedParameters.size(); i++) {
+                    SingleVariableDeclaration removedParameter = removedParameters.get(i);
+                    SingleVariableDeclaration addedParameter = addedParameters.get(i);
+                    parameterDiffList.add(Pair.of(removedParameter, addedParameter));
+                }
+                removedParameters.clear();
+                addedParameters.clear();
             }
         }
         getParameterRefactorings(parameterDiffList, addedParameters, removedParameters, oldEntity, newEntity, refactorings);
@@ -888,10 +910,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                 Set<DeclarationNodeTree> subclassSetBefore = new LinkedHashSet<>();
                 Set<DeclarationNodeTree> subclassSetAfter = new LinkedHashSet<>();
                 for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : matchedEntities) {
-                    if (addedEntity.getType() == EntityType.CLASS || addedEntity.getType() == EntityType.INTERFACE) {
-                        DeclarationNodeTree oldEntity = pair.getLeft();
-                        if (mapping.contains(oldEntity)) {
-                            DeclarationNodeTree newEntity = pair.getRight();
+                    DeclarationNodeTree oldEntity = pair.getLeft();
+                    if (mapping.contains(oldEntity)) {
+                        DeclarationNodeTree newEntity = pair.getRight();
+                        if (newEntity.getType() == EntityType.CLASS || newEntity.getType() == EntityType.INTERFACE) {
                             TypeDeclaration newClass = (TypeDeclaration) newEntity.getDeclaration();
                             TypeDeclaration addedClass = (TypeDeclaration) addedEntity.getDeclaration();
                             if (!isSubTypeOf(newClass, addedClass) && !isSubTypeOf(addedClass, newClass)) {
@@ -969,14 +991,20 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
     }
 
     private boolean isSubTypeOf(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities, DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity) {
-        TypeDeclaration removedClass = (TypeDeclaration) oldEntity.getParent().getDeclaration();
-        DeclarationNodeTree matchedAddedEntity = findMatchedEntity(matchedEntities, newEntity.getParent());
-        TypeDeclaration matchedAddedClass = matchedAddedEntity == null ? null : (TypeDeclaration) (matchedAddedEntity.getDeclaration());
-        TypeDeclaration addedClass = (TypeDeclaration) newEntity.getParent().getDeclaration();
-        DeclarationNodeTree matchedDeletedEntity = findMatchedEntity(matchedEntities, oldEntity.getParent());
-        TypeDeclaration matchedDeletedClass = matchedDeletedEntity == null ? null : (TypeDeclaration) (matchedDeletedEntity.getDeclaration());
-        return (matchedAddedClass != null && isSubTypeOf(removedClass, matchedAddedClass))
-                || (matchedDeletedClass != null && isSubTypeOf(matchedDeletedClass, addedClass));
+        DeclarationNodeTree oldParent = oldEntity.getParent();
+        DeclarationNodeTree newParent = newEntity.getParent();
+        if ((oldParent.getType() == EntityType.CLASS || oldParent.getType() == EntityType.INTERFACE) &&
+                (newParent.getType() == EntityType.CLASS || newParent.getType() == EntityType.INTERFACE)) {
+            TypeDeclaration removedClass = (TypeDeclaration) oldParent.getDeclaration();
+            TypeDeclaration addedClass = (TypeDeclaration) newParent.getDeclaration();
+            DeclarationNodeTree matchedAddedEntity = findMatchedEntity(matchedEntities, newParent);
+            TypeDeclaration matchedAddedClass = matchedAddedEntity == null ? null : (TypeDeclaration) (matchedAddedEntity.getDeclaration());
+            DeclarationNodeTree matchedDeletedEntity = findMatchedEntity(matchedEntities, oldParent);
+            TypeDeclaration matchedDeletedClass = matchedDeletedEntity == null ? null : (TypeDeclaration) (matchedDeletedEntity.getDeclaration());
+            return (matchedAddedClass != null && isSubTypeOf(removedClass, matchedAddedClass))
+                    || (matchedDeletedClass != null && isSubTypeOf(matchedDeletedClass, addedClass));
+        }
+        return false;
     }
 
     private boolean isSubTypeOf(TypeDeclaration removedClass, TypeDeclaration addedClass) {
@@ -1332,50 +1360,54 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                                      DeclarationNodeTree newEntity, List<Refactoring> refactorings) {
         TryStatement statement1 = (TryStatement) oldStatement.getStatement();
         TryStatement statement2 = (TryStatement) newStatement.getStatement();
-        List<VariableDeclarationExpression> resources1 = statement1.resources();
-        List<VariableDeclarationExpression> resources2 = statement2.resources();
+        List<Object> resources1 = statement1.resources();
+        List<Object> resources2 = statement2.resources();
         for (int i = 0; i < Math.min(resources1.size(), resources2.size()); i++) {
-            VariableDeclarationExpression expression1 = resources1.get(i);
-            VariableDeclarationExpression expression2 = resources2.get(i);
-            List<VariableDeclarationFragment> fragments1 = expression1.fragments();
-            List<VariableDeclarationFragment> fragments2 = expression2.fragments();
-            Type type1 = expression1.getType();
-            Type type2 = expression2.getType();
-            for (int j = 0; j < Math.min(fragments1.size(), fragments2.size()); j++) {
-                VariableDeclarationFragment fragment1 = fragments1.get(j);
-                VariableDeclarationFragment fragment2 = fragments2.get(j);
-                if (!fragment1.getName().getIdentifier().equals(fragment2.getName().getIdentifier())) {
-                    RenameVariableRefactoring refactoring = new RenameVariableRefactoring(fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                if (!type1.toString().equals(type2.toString())) {
-                    ChangeVariableTypeRefactoring refactoring = new ChangeVariableTypeRefactoring(fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                List<IExtendedModifier> modifiers1 = expression1.modifiers();
-                List<IExtendedModifier> modifiers2 = expression2.modifiers();
-                AnnotationListDiff annotationListDiff = new AnnotationListDiff(modifiers1, modifiers2);
-                for (Annotation annotation : annotationListDiff.getAddedAnnotations()) {
-                    AddVariableAnnotationRefactoring refactoring = new AddVariableAnnotationRefactoring(annotation, fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                for (Annotation annotation : annotationListDiff.getRemovedAnnotations()) {
-                    RemoveVariableAnnotationRefactoring refactoring = new RemoveVariableAnnotationRefactoring(annotation, fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                for (Pair<Annotation, Annotation> annotationDiff : annotationListDiff.getAnnotationDiffs()) {
-                    ModifyVariableAnnotationRefactoring refactoring = new ModifyVariableAnnotationRefactoring(annotationDiff.getLeft(), annotationDiff.getRight(), fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                int variableModifiers1 = expression1.getModifiers();
-                int variableModifiers2 = expression2.getModifiers();
-                if (!Flags.isFinal(variableModifiers1) && Flags.isFinal(variableModifiers2)) {
-                    AddVariableModifierRefactoring refactoring = new AddVariableModifierRefactoring("final", fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                if (Flags.isFinal(variableModifiers1) && !Flags.isFinal(variableModifiers2)) {
-                    RemoveVariableModifierRefactoring refactoring = new RemoveVariableModifierRefactoring("final", fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
+            Object resource1 = resources1.get(i);
+            Object resource2 = resources2.get(i);
+            if (resource1 instanceof VariableDeclarationExpression && resource2 instanceof VariableDeclarationExpression) {
+                VariableDeclarationExpression expression1 = (VariableDeclarationExpression) resource1;
+                VariableDeclarationExpression expression2 = (VariableDeclarationExpression) resource2;
+                List<VariableDeclarationFragment> fragments1 = expression1.fragments();
+                List<VariableDeclarationFragment> fragments2 = expression2.fragments();
+                Type type1 = expression1.getType();
+                Type type2 = expression2.getType();
+                for (int j = 0; j < Math.min(fragments1.size(), fragments2.size()); j++) {
+                    VariableDeclarationFragment fragment1 = fragments1.get(j);
+                    VariableDeclarationFragment fragment2 = fragments2.get(j);
+                    if (!fragment1.getName().getIdentifier().equals(fragment2.getName().getIdentifier())) {
+                        RenameVariableRefactoring refactoring = new RenameVariableRefactoring(fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
+                    if (!type1.toString().equals(type2.toString())) {
+                        ChangeVariableTypeRefactoring refactoring = new ChangeVariableTypeRefactoring(fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
+                    List<IExtendedModifier> modifiers1 = expression1.modifiers();
+                    List<IExtendedModifier> modifiers2 = expression2.modifiers();
+                    AnnotationListDiff annotationListDiff = new AnnotationListDiff(modifiers1, modifiers2);
+                    for (Annotation annotation : annotationListDiff.getAddedAnnotations()) {
+                        AddVariableAnnotationRefactoring refactoring = new AddVariableAnnotationRefactoring(annotation, fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
+                    for (Annotation annotation : annotationListDiff.getRemovedAnnotations()) {
+                        RemoveVariableAnnotationRefactoring refactoring = new RemoveVariableAnnotationRefactoring(annotation, fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
+                    for (Pair<Annotation, Annotation> annotationDiff : annotationListDiff.getAnnotationDiffs()) {
+                        ModifyVariableAnnotationRefactoring refactoring = new ModifyVariableAnnotationRefactoring(annotationDiff.getLeft(), annotationDiff.getRight(), fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
+                    int variableModifiers1 = expression1.getModifiers();
+                    int variableModifiers2 = expression2.getModifiers();
+                    if (!Flags.isFinal(variableModifiers1) && Flags.isFinal(variableModifiers2)) {
+                        AddVariableModifierRefactoring refactoring = new AddVariableModifierRefactoring("final", fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
+                    if (Flags.isFinal(variableModifiers1) && !Flags.isFinal(variableModifiers2)) {
+                        RemoveVariableModifierRefactoring refactoring = new RemoveVariableModifierRefactoring("final", fragment1, fragment2, oldEntity, newEntity);
+                        refactorings.add(refactoring);
+                    }
                 }
             }
         }
