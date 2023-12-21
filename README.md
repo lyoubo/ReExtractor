@@ -101,9 +101,9 @@ Currently, it supports the detection of the following refactorings:
 
 # Requirements
 
-Java 11.0.17 or newer
+**Java 17** or newer
 
-Apache Maven 3.8.1 or newer
+**Apache Maven 3.8** or newer
 
 # API usage guidelines
 
@@ -344,7 +344,7 @@ To add ReExtractor as a maven dependency in your project, add the following snip
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>2.0.1</version>
+      <version>2.0.2</version>
     </dependency>
 
 # Tool
