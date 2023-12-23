@@ -6,7 +6,7 @@ import org.remapper.dto.EntityType;
 
 public class AttributeUtils {
 
-    /*public static String attribute2String(DeclarationNodeTree attribute) {
+    public static String attribute2QualifiedString(DeclarationNodeTree attribute) {
         StringBuilder sb = new StringBuilder();
         if (attribute.getType() == EntityType.FIELD) {
             FieldDeclaration fieldDeclaration = (FieldDeclaration) attribute.getDeclaration();
@@ -21,7 +21,7 @@ public class AttributeUtils {
             sb.append(attribute.getParent().getName());
         }
         return sb.toString();
-    }*/
+    }
 
     public static String attribute2String(DeclarationNodeTree attribute) {
         StringBuilder sb = new StringBuilder();

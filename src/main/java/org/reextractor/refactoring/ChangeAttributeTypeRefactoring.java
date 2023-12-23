@@ -25,7 +25,7 @@ public class ChangeAttributeTypeRefactoring implements Refactoring {
         List<CodeRange> ranges = new ArrayList<>();
         ranges.add(originalAttribute.codeRange()
                 .setDescription("original attribute declaration")
-                .setCodeElement(AttributeUtils.attribute2String(originalAttribute)));
+                .setCodeElement(AttributeUtils.attribute2QualifiedString(originalAttribute)));
         return ranges;
     }
 
@@ -33,7 +33,7 @@ public class ChangeAttributeTypeRefactoring implements Refactoring {
         List<CodeRange> ranges = new ArrayList<>();
         ranges.add(changedTypeAttribute.codeRange()
                 .setDescription("changed-type attribute declaration")
-                .setCodeElement(AttributeUtils.attribute2String(changedTypeAttribute)));
+                .setCodeElement(AttributeUtils.attribute2QualifiedString(changedTypeAttribute)));
         return ranges;
     }
 
@@ -44,9 +44,9 @@ public class ChangeAttributeTypeRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(AttributeUtils.attribute2String(originalAttribute));
+        sb.append(AttributeUtils.attribute2QualifiedString(originalAttribute));
         sb.append(" to ");
-        sb.append(AttributeUtils.attribute2String(changedTypeAttribute));
+        sb.append(AttributeUtils.attribute2QualifiedString(changedTypeAttribute));
         sb.append(" in class ").append(changedTypeAttribute.getNamespace());
         return sb.toString();
     }
