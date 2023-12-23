@@ -872,7 +872,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                             continue;
                         if (MethodUtils.isGetter((MethodDeclaration) extractedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) extractedEntity.getDeclaration()))
                             continue;
-                        double dice = DiceFunction.calculateBodyDice((LeafNode) extractedEntity, (LeafNode) newEntity, (LeafNode) oldEntity);
+                        double dice = DiceFunction.calculateBodyDice((LeafNode) oldEntity, (LeafNode) newEntity, (LeafNode) extractedEntity);
                         if (dice < DiceFunction.minSimilarity && !matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, extractedEntity, true, matchedStatements))
                             continue;
                         boolean isMove = !oldEntity.getNamespace().equals(extractedEntity.getNamespace()) &&
@@ -1007,7 +1007,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                             continue;
                         if (MethodUtils.isGetter((MethodDeclaration) inlinedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) inlinedEntity.getDeclaration()))
                             continue;
-                        double dice = DiceFunction.calculateBodyDice((LeafNode) inlinedEntity, (LeafNode) oldEntity, (LeafNode) newEntity);
+                        double dice = DiceFunction.calculateBodyDice((LeafNode) newEntity, (LeafNode) oldEntity, (LeafNode) inlinedEntity);
                         if (dice < DiceFunction.minSimilarity && !matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, inlinedEntity, false, matchedStatements))
                             continue;
                         boolean isMove = !inlinedEntity.getNamespace().equals(newEntity.getNamespace()) &&
@@ -1656,7 +1656,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     oldEntity = oldStatement.getRoot().getMethodEntity();
                 if (expression2.contains(fragment.getName().getIdentifier()) && fragment.getInitializer() != null &&
                         (expression1.contains(fragment.getInitializer().toString()) ||
-                                DiceFunction.calculateBodyDice(fragment, newStatement, oldStatement) >= DiceFunction.minSimilarity)) {
+                                DiceFunction.calculateBodyDice(fragment, oldStatement, newStatement) >= DiceFunction.minSimilarity)) {
                     references.put(oldStatement, newStatement);
                 }
             }
@@ -1790,7 +1790,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     newEntity = newStatement.getRoot().getMethodEntity();
                 if (expression1.contains(fragment.getName().getIdentifier()) && fragment.getInitializer() != null &&
                         (expression2.contains(fragment.getInitializer().toString()) ||
-                                DiceFunction.calculateBodyDice(fragment, oldStatement, newStatement) >= DiceFunction.minSimilarity)) {
+                                DiceFunction.calculateBodyDice(fragment, newStatement, oldStatement) >= DiceFunction.minSimilarity)) {
                     references.put(oldStatement, newStatement);
                 }
             }

@@ -16,17 +16,17 @@ import java.util.Set;
 
 public class DiceFunction extends org.remapper.util.DiceFunction {
 
-    public static double calculateBodyDice(LeafNode leafAdditional, LeafNode leafRefactored, LeafNode leafOriginal) {
+    public static double calculateBodyDice(LeafNode oldNode, LeafNode newNode, LeafNode anotherNode) {
         JDTService jdtService = new JDTServiceImpl();
-        MethodDeclaration additionalDeclaration = (MethodDeclaration) leafAdditional.getDeclaration();
-        Block additionalBody = additionalDeclaration.getBody();
-        List<ChildNode> list1 = jdtService.getDescendants(additionalBody);
-        MethodDeclaration refactoredDeclaration = (MethodDeclaration) leafRefactored.getDeclaration();
-        Block refactoredBody = refactoredDeclaration.getBody();
-        List<ChildNode> list2 = jdtService.getDescendants(refactoredBody);
-        MethodDeclaration originalDeclaration = (MethodDeclaration) leafOriginal.getDeclaration();
-        Block originalBody = originalDeclaration.getBody();
-        List<ChildNode> list3 = jdtService.getDescendants(originalBody);
+        MethodDeclaration oldDeclaration = (MethodDeclaration) oldNode.getDeclaration();
+        Block oldBody = oldDeclaration.getBody();
+        List<ChildNode> list1 = jdtService.getDescendants(oldBody);
+        MethodDeclaration newDeclaration = (MethodDeclaration) newNode.getDeclaration();
+        Block newBody = newDeclaration.getBody();
+        List<ChildNode> list2 = jdtService.getDescendants(newBody);
+        MethodDeclaration anotherDeclaration = (MethodDeclaration) anotherNode.getDeclaration();
+        Block anotherBody = anotherDeclaration.getBody();
+        List<ChildNode> list3 = jdtService.getDescendants(anotherBody);
         return calculateBodyDice(list1, list2, list3);
     }
 
@@ -34,9 +34,9 @@ public class DiceFunction extends org.remapper.util.DiceFunction {
         int intersection = 0;
         Set<Integer> matched = new HashSet<>();
         for (ChildNode childBefore : list2) {
-            for (int i = 0; i < list3.size(); i++) {
+            for (int i = 0; i < list1.size(); i++) {
                 if (matched.contains(i)) continue;
-                ChildNode childCurrent = list3.get(i);
+                ChildNode childCurrent = list1.get(i);
                 if (childBefore.equals(childCurrent)) {
                     matched.add(i);
                     break;
@@ -45,14 +45,14 @@ public class DiceFunction extends org.remapper.util.DiceFunction {
         }
         List<ChildNode> temp = new ArrayList<>();
         for (int i : matched) {
-            temp.add(list3.get(i));
+            temp.add(list1.get(i));
         }
-        list3.removeAll(temp);
+        list1.removeAll(temp);
         Set<Integer> matched1 = new HashSet<>();
-        for (ChildNode childBefore : list1) {
-            for (int i = 0; i < list3.size(); i++) {
+        for (ChildNode childBefore : list3) {
+            for (int i = 0; i < list1.size(); i++) {
                 if (matched1.contains(i)) continue;
-                ChildNode childCurrent = list3.get(i);
+                ChildNode childCurrent = list1.get(i);
                 if (childBefore.equals(childCurrent)) {
                     intersection++;
                     matched1.add(i);
@@ -60,14 +60,14 @@ public class DiceFunction extends org.remapper.util.DiceFunction {
                 }
             }
         }
-        return list1.isEmpty() ? 0 : 1.0 * intersection / list1.size();
+        return list3.isEmpty() ? 0 : 1.0 * intersection / list3.size();
     }
 
-    public static double calculateBodyDice(VariableDeclarationFragment fragment, StatementNodeTree leafRefactored, StatementNodeTree leafOriginal) {
+    public static double calculateBodyDice(VariableDeclarationFragment fragment, StatementNodeTree oldStatement, StatementNodeTree newStatement) {
         JDTService jdtService = new JDTServiceImpl();
         List<ChildNode> list1 = jdtService.getDescendants(fragment.getInitializer());
-        List<ChildNode> list2 = jdtService.getDescendants(leafRefactored.getStatement());
-        List<ChildNode> list3 = jdtService.getDescendants(leafOriginal.getStatement());
+        List<ChildNode> list2 = jdtService.getDescendants(newStatement.getStatement());
+        List<ChildNode> list3 = jdtService.getDescendants(oldStatement.getStatement());
         return calculateBodyDice(list1, list2, list3);
     }
 }
