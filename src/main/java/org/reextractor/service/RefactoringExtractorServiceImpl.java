@@ -84,14 +84,15 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         Set<DeclarationNodeTree> inlinedEntities = matchPair.getInlinedEntities();
         Set<DeclarationNodeTree> extractedEntities = matchPair.getExtractedEntities();
         Set<DeclarationNodeTree> addedEntities = matchPair.getAddedEntities();
-        detectRefactoringsInMatchedEntities(matchedEntities, refactorings);
-        detectRefactoringsBetweenMatchedAndExtractedEntities(matchedEntities, extractedEntities, addedEntities, refactorings);
-        detectRefactoringsBetweenMatchedAndInlinedEntities(matchedEntities, inlinedEntities, refactorings);
-
         Set<Pair<MethodNode, MethodNode>> methodNodePairs = mapMethodNodePairs(matchedEntities, inlinedEntities, extractedEntities);
         Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements = matchPair.getMatchedStatements();
         Set<StatementNodeTree> deletedStatements = matchPair.getDeletedStatements();
         Set<StatementNodeTree> addedStatements = matchPair.getAddedStatements();
+
+        detectRefactoringsInMatchedEntities(matchedEntities, refactorings);
+        detectRefactoringsBetweenMatchedAndExtractedEntities(matchedEntities, extractedEntities, addedEntities, matchedStatements, refactorings);
+        detectRefactoringsBetweenMatchedAndInlinedEntities(matchedEntities, inlinedEntities, matchedStatements, refactorings);
+
         detectRefactoringsInMatchedStatements(matchedStatements, refactorings);
         detectRefactoringsBetweenMatchedAndAddedStatements(methodNodePairs, matchedStatements, addedStatements, refactorings);
         detectRefactoringsBetweenMatchedAndDeletedStatements(methodNodePairs, matchedStatements, deletedStatements, refactorings);
@@ -856,6 +857,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
 
     private void detectRefactoringsBetweenMatchedAndExtractedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
                                                                       Set<DeclarationNodeTree> extractedEntities, Set<DeclarationNodeTree> addedEntities,
+                                                                      Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
                                                                       List<Refactoring> refactorings) {
         for (DeclarationNodeTree extractedEntity : extractedEntities) {
             if (extractedEntity.getType() == EntityType.METHOD) {
@@ -864,18 +866,14 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     DeclarationNodeTree oldEntity = pair.getLeft();
                     DeclarationNodeTree newEntity = pair.getRight();
                     if (oldEntity.getType() == EntityType.METHOD && newEntity.getType() == EntityType.METHOD) {
-                        if (!dependencies.contains(newEntity.getEntity()))
+                        if (!dependencies.contains(newEntity.getEntity()) && !hasMethodInvocation(newEntity, extractedEntity))
                             continue;
                         if (MethodUtils.isNewFunction(oldEntity.getDeclaration(), newEntity.getDeclaration()))
                             continue;
                         if (MethodUtils.isGetter((MethodDeclaration) extractedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) extractedEntity.getDeclaration()))
                             continue;
-                        MethodNode methodNode = extractedEntity.getMethodNode();
-                        int totalLOC = methodNode.getAllControls().size() + methodNode.getAllBlocks().size() + methodNode.getAllOperations().size() - 1;
-                        int unmatchedLOC = methodNode.getUnmatchedStatements().size();
-                        int matchedLOC = totalLOC - unmatchedLOC;
                         double dice = DiceFunction.calculateBodyDice((LeafNode) extractedEntity, (LeafNode) newEntity, (LeafNode) oldEntity);
-                        if (dice < DiceFunction.minSimilarity && matchedLOC <= unmatchedLOC)
+                        if (dice < DiceFunction.minSimilarity && !matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, extractedEntity, true, matchedStatements))
                             continue;
                         boolean isMove = !oldEntity.getNamespace().equals(extractedEntity.getNamespace()) &&
                                 !matchedEntities.contains(Pair.of(oldEntity.getParent(), extractedEntity.getParent()));
@@ -943,8 +941,59 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         }
     }
 
+    private boolean hasMethodInvocation(DeclarationNodeTree node1, DeclarationNodeTree node2) {
+        MethodDeclaration declaration1 = (MethodDeclaration) node1.getDeclaration();
+        MethodDeclaration declaration2 = (MethodDeclaration) node2.getDeclaration();
+        List<MethodInvocation> invocations = new ArrayList<>();
+        declaration1.accept(new ASTVisitor() {
+            @Override
+            public boolean visit(MethodInvocation node) {
+                if (node.getName().getIdentifier().equals(declaration2.getName().getIdentifier()) &&
+                        node.arguments().size() == declaration2.parameters().size())
+                    invocations.add(node);
+                return true;
+            }
+        });
+        return !invocations.isEmpty() && StringUtils.equals(node1.getNamespace(), node2.getNamespace());
+    }
+
+    private boolean matchedLOCAreGreaterThanUnmatchedLOC(DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity,
+                                                         DeclarationNodeTree anotherEntity, boolean isExtracted,
+                                                         Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements) {
+        MethodNode methodNode = anotherEntity.getMethodNode();
+        List<StatementNodeTree> statements = methodNode.getMatchedStatements();
+        int totalLOC = methodNode.getAllControls().size() + methodNode.getAllBlocks().size() + methodNode.getAllOperations().size() - 1;
+        int matchedLOC = 0;
+        // isExtracted == true ? extract method : inline method
+        if (isExtracted) {
+            for (StatementNodeTree snt : statements) {
+                for (Pair<StatementNodeTree, StatementNodeTree> pair : matchedStatements) {
+                    StatementNodeTree oldStatement = pair.getLeft();
+                    StatementNodeTree newStatement = pair.getRight();
+                    if (snt == newStatement && oldStatement.getRoot().getMethodEntity() == oldEntity) {
+                        matchedLOC += 1;
+                    }
+                }
+            }
+        } else {
+            for (StatementNodeTree snt : statements) {
+                for (Pair<StatementNodeTree, StatementNodeTree> pair : matchedStatements) {
+                    StatementNodeTree oldStatement = pair.getLeft();
+                    StatementNodeTree newStatement = pair.getRight();
+                    if (snt == oldStatement && newStatement.getRoot().getMethodEntity() == newEntity) {
+                        matchedLOC += 1;
+                    }
+                }
+            }
+        }
+        int unMatchedLOC = totalLOC - matchedLOC;
+        return matchedLOC > unMatchedLOC;
+    }
+
     private void detectRefactoringsBetweenMatchedAndInlinedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
-                                                                    Set<DeclarationNodeTree> inlinedEntities, List<Refactoring> refactorings) {
+                                                                    Set<DeclarationNodeTree> inlinedEntities,
+                                                                    Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
+                                                                    List<Refactoring> refactorings) {
         for (DeclarationNodeTree inlinedEntity : inlinedEntities) {
             if (inlinedEntity.getType() == EntityType.METHOD) {
                 List<EntityInfo> dependencies = inlinedEntity.getDependencies();
@@ -952,18 +1001,14 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     DeclarationNodeTree oldEntity = pair.getLeft();
                     DeclarationNodeTree newEntity = pair.getRight();
                     if (oldEntity.getType() == EntityType.METHOD && newEntity.getType() == EntityType.METHOD) {
-                        if (!dependencies.contains(oldEntity.getEntity()))
+                        if (!dependencies.contains(oldEntity.getEntity()) && !hasMethodInvocation(oldEntity, inlinedEntity))
                             continue;
                         if (MethodUtils.isNewFunction(newEntity.getDeclaration(), oldEntity.getDeclaration()))
                             continue;
                         if (MethodUtils.isGetter((MethodDeclaration) inlinedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) inlinedEntity.getDeclaration()))
                             continue;
-                        MethodNode methodNode = inlinedEntity.getMethodNode();
-                        int totalLOC = methodNode.getAllControls().size() + methodNode.getAllBlocks().size() + methodNode.getAllOperations().size() - 1;
-                        int unmatchedLOC = methodNode.getUnmatchedStatements().size();
-                        int matchedLOC = totalLOC - unmatchedLOC;
                         double dice = DiceFunction.calculateBodyDice((LeafNode) inlinedEntity, (LeafNode) oldEntity, (LeafNode) newEntity);
-                        if (dice < DiceFunction.minSimilarity && matchedLOC <= unmatchedLOC)
+                        if (dice < DiceFunction.minSimilarity && !matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, inlinedEntity, false, matchedStatements))
                             continue;
                         boolean isMove = !inlinedEntity.getNamespace().equals(newEntity.getNamespace()) &&
                                 !matchedEntities.contains(Pair.of(inlinedEntity.getParent(), newEntity.getParent()));
