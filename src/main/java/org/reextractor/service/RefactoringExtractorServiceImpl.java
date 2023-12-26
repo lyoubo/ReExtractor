@@ -11,13 +11,13 @@ import org.reextractor.dto.AnnotationListDiff;
 import org.reextractor.dto.Visibility;
 import org.reextractor.handler.RefactoringHandler;
 import org.reextractor.refactoring.*;
-import org.reextractor.util.DiceFunction;
 import org.reextractor.util.MethodUtils;
 import org.reextractor.util.StringUtils;
 import org.remapper.dto.*;
 import org.remapper.handler.MatchingHandler;
 import org.remapper.service.EntityMatcherService;
 import org.remapper.service.EntityMatcherServiceImpl;
+import org.remapper.util.DiceFunction;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -1683,7 +1683,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     if (!methodNodePairs.contains(Pair.of(oldStatement.getRoot(), addedStatement.getRoot())))
                         continue;
                     String addedExpression = addedStatement.getExpression();
-                    if ((expression1.contains(addedExpression.replace("if(", "")) ||
+                    if (!expression1.equals(addedExpression) && (expression1.contains(addedExpression.replace("if(", "")) ||
                             expression1.contains(addedExpression.replace("if(", "").replace(")", ""))) &&
                             !(expression2.contains(addedExpression.replace("if(", ""))
                                     || expression2.contains(addedExpression.replace("if(", "").replace(")", ""))
@@ -1845,7 +1845,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     if (!methodNodePairs.contains(Pair.of(deletedStatement.getRoot(), newStatement.getRoot())))
                         continue;
                     String deletedExpression = deletedStatement.getExpression();
-                    if ((expression2.contains(deletedExpression.replace("if(", "")) ||
+                    if (!expression2.equals(deletedExpression) && (expression2.contains(deletedExpression.replace("if(", "")) ||
                             expression2.contains(deletedExpression.replace("if(", "").replace(")", ""))) &&
                             !(expression1.contains(deletedExpression.replace("if(", ""))
                                     || expression1.contains(deletedExpression.replace("if(", "").replace(")", ""))
