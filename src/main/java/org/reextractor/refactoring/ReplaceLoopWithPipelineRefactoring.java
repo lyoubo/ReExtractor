@@ -68,7 +68,7 @@ public class ReplaceLoopWithPipelineRefactoring implements Refactoring {
         sb.append(getName()).append("\t");
         sb.append(loop.getExpression());
         sb.append(" with ");
-        sb.append(pipeline.getExpression());
+        sb.append(pipeline.getExpression().strip());
         sb.append(" in method ");
         sb.append(MethodUtils.method2String(operationAfter));
         sb.append(" from class ");

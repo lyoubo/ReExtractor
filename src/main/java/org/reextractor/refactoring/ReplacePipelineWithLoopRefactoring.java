@@ -66,7 +66,7 @@ public class ReplacePipelineWithLoopRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(pipeline.getExpression());
+        sb.append(pipeline.getExpression().strip());
         sb.append(" with ");
         sb.append(loop.getExpression());
         sb.append(" in method ");
