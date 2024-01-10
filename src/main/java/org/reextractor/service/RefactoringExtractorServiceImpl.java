@@ -1838,7 +1838,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
             if (oldStatement.getType() == StatementType.IF_STATEMENT && newStatement.getType() == StatementType.IF_STATEMENT) {
                 String expression1 = oldStatement.getExpression();
                 String expression2 = newStatement.getExpression();
-                Set<StatementNodeTree> mergedConditionals = new TreeSet<>(Comparator.comparingInt(StatementNodeTree::getPosition));
+                Set<StatementNodeTree> mergedConditionals = new LinkedHashSet<>();
                 DeclarationNodeTree oldEntity = null;
                 DeclarationNodeTree newEntity = null;
                 for (StatementNodeTree deletedStatement : deletedStatements) {
