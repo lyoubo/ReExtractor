@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>ReExtractor</artifactId>
-    <version>2.1.4</version>
+    <version>2.1.5</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>io.github.lyoubo</groupId>
             <artifactId>remapper</artifactId>
-            <version>2.1.12</version>
+            <version>2.1.13</version>
         </dependency>
     </dependencies>
 
