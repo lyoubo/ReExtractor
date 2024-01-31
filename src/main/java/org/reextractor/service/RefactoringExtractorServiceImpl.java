@@ -19,6 +19,7 @@ import org.remapper.service.EntityMatcherService;
 import org.remapper.service.EntityMatcherServiceImpl;
 import org.remapper.util.DiceFunction;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -64,18 +65,25 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         EntityMatcherService service = new EntityMatcherServiceImpl();
         String commitId = currentCommit.getId().getName();
         if (currentCommit.getParentCount() > 0) {
-            MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
-                @Override
-                public void handleException(String commit, Exception e) {
-                    System.err.println("Error processing commit " + commit);
-                    e.printStackTrace(System.err);
-                }
-            });
+            MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {});
             refactoringsAtRevision = detectRefactorings(matchPair);
         } else {
             refactoringsAtRevision = Collections.emptyList();
         }
         handler.handle(commitId, refactoringsAtRevision);
+    }
+
+    public void detectAtFiles(File previousFile, File nextFile, RefactoringHandler handler) {
+        List<Refactoring> refactoringsAtRevision = Collections.emptyList();
+        EntityMatcherService service = new EntityMatcherServiceImpl();
+        String id = previousFile.getName() + " -> " + nextFile.getName();
+        try {
+            MatchPair matchPair = service.matchEntities(previousFile, nextFile, new MatchingHandler() {});
+            refactoringsAtRevision = detectRefactorings(matchPair);
+        } catch (Exception e) {
+            handler.handleException(id, e);
+        }
+        handler.handle(id, refactoringsAtRevision);
     }
 
     protected List<Refactoring> detectRefactorings(MatchPair matchPair) {
