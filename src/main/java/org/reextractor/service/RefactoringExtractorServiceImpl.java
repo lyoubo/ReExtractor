@@ -65,7 +65,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         EntityMatcherService service = new EntityMatcherServiceImpl();
         String commitId = currentCommit.getId().getName();
         if (currentCommit.getParentCount() > 0) {
-            MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {});
+            MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
+            });
             refactoringsAtRevision = detectRefactorings(matchPair);
         } else {
             refactoringsAtRevision = Collections.emptyList();
@@ -78,7 +79,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         EntityMatcherService service = new EntityMatcherServiceImpl();
         String id = previousFile.getName() + " -> " + nextFile.getName();
         try {
-            MatchPair matchPair = service.matchEntities(previousFile, nextFile, new MatchingHandler() {});
+            MatchPair matchPair = service.matchEntities(previousFile, nextFile, new MatchingHandler() {
+            });
             refactoringsAtRevision = detectRefactorings(matchPair);
         } catch (Exception e) {
             handler.handleException(id, e);
@@ -92,14 +94,15 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         Set<DeclarationNodeTree> inlinedEntities = matchPair.getInlinedEntities();
         Set<DeclarationNodeTree> extractedEntities = matchPair.getExtractedEntities();
         Set<DeclarationNodeTree> addedEntities = matchPair.getAddedEntities();
+        Set<DeclarationNodeTree> deletedEntities = matchPair.getDeletedEntities();
         Set<Pair<MethodNode, MethodNode>> methodNodePairs = mapMethodNodePairs(matchedEntities, inlinedEntities, extractedEntities);
         Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements = matchPair.getMatchedStatements();
         Set<StatementNodeTree> deletedStatements = matchPair.getDeletedStatements();
         Set<StatementNodeTree> addedStatements = matchPair.getAddedStatements();
 
         detectRefactoringsInMatchedEntities(matchedEntities, refactorings);
-        detectRefactoringsBetweenMatchedAndExtractedEntities(matchedEntities, extractedEntities, addedEntities, matchedStatements, refactorings);
-        detectRefactoringsBetweenMatchedAndInlinedEntities(matchedEntities, inlinedEntities, matchedStatements, refactorings);
+        detectRefactoringsBetweenMatchedAndAddedEntities(matchedEntities, extractedEntities, addedEntities, matchedStatements, refactorings);
+        detectRefactoringsBetweenMatchedDeletedEntities(matchedEntities, inlinedEntities, deletedEntities, matchedStatements, matchPair, refactorings);
 
         detectRefactoringsInMatchedStatements(matchedStatements, refactorings);
         detectRefactoringsBetweenMatchedAndAddedStatements(methodNodePairs, matchedStatements, addedStatements, refactorings);
@@ -863,10 +866,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         }
     }
 
-    private void detectRefactoringsBetweenMatchedAndExtractedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
-                                                                      Set<DeclarationNodeTree> extractedEntities, Set<DeclarationNodeTree> addedEntities,
-                                                                      Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
-                                                                      List<Refactoring> refactorings) {
+    private void detectRefactoringsBetweenMatchedAndAddedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
+                                                                  Set<DeclarationNodeTree> extractedEntities, Set<DeclarationNodeTree> addedEntities,
+                                                                  Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
+                                                                  List<Refactoring> refactorings) {
         for (DeclarationNodeTree extractedEntity : extractedEntities) {
             if (extractedEntity.getType() == EntityType.METHOD) {
                 List<EntityInfo> dependencies = extractedEntity.getDependencies();
@@ -998,10 +1001,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         return matchedLOC > unMatchedLOC;
     }
 
-    private void detectRefactoringsBetweenMatchedAndInlinedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
-                                                                    Set<DeclarationNodeTree> inlinedEntities,
-                                                                    Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
-                                                                    List<Refactoring> refactorings) {
+    private void detectRefactoringsBetweenMatchedDeletedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
+                                                                 Set<DeclarationNodeTree> inlinedEntities, Set<DeclarationNodeTree> deletedEntities,
+                                                                 Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
+                                                                 MatchPair matchPair, List<Refactoring> refactorings) {
         for (DeclarationNodeTree inlinedEntity : inlinedEntities) {
             if (inlinedEntity.getType() == EntityType.METHOD) {
                 List<EntityInfo> dependencies = inlinedEntity.getDependencies();
@@ -1028,6 +1031,41 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                             refactorings.add(refactoring);
                         }
                     }
+                }
+            }
+        }
+        for (DeclarationNodeTree deletedEntity : deletedEntities) {
+            if (deletedEntity.getType() != EntityType.METHOD)
+                continue;
+            DeclarationNodeTree parent = deletedEntity.getParent();
+            if (parent.getType() != EntityType.CLASS)
+                continue;
+            for (Pair<DeclarationNodeTree, DeclarationNodeTree> matchedEntity : matchedEntities) {
+                DeclarationNodeTree oldEntity = matchedEntity.getLeft();
+                DeclarationNodeTree newEntity = matchedEntity.getRight();
+                if (oldEntity.getType() != EntityType.CLASS && oldEntity.getType() != EntityType.INTERFACE)
+                    continue;
+                TypeDeclaration deletedClass = (TypeDeclaration) parent.getDeclaration();
+                TypeDeclaration oldClass = (TypeDeclaration) oldEntity.getDeclaration();
+                if (!isSubTypeOf(deletedClass, oldClass))
+                    continue;
+                List<DeclarationNodeTree> children = newEntity.getChildren();
+                boolean isOverride = false;
+                DeclarationNodeTree overrideMethod = null;
+                for (DeclarationNodeTree child : children) {
+                    if (child.getType() != EntityType.METHOD)
+                        continue;
+                    String deletedParams = deletedEntity.getEntity().getParams();
+                    String newParams = child.getEntity().getParams();
+                    if (StringUtils.equals(deletedParams, newParams)) {
+                        isOverride = true;
+                        overrideMethod = child;
+                        break;
+                    }
+                }
+                if (isOverride && DiceFunction.calculateSimilarity(matchPair, deletedEntity, overrideMethod) >= DiceFunction.minSimilarity) {
+                    PullUpOperationRefactoring refactoring = new PullUpOperationRefactoring(deletedEntity, overrideMethod);
+                    refactorings.add(refactoring);
                 }
             }
         }
