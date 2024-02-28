@@ -1,5 +1,6 @@
 package org.reextractor.refactoring;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.reextractor.util.MethodUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
@@ -8,6 +9,7 @@ import org.remapper.dto.StatementNodeTree;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 public class MoveAndInlineOperationRefactoring implements Refactoring {
 
@@ -18,13 +20,21 @@ public class MoveAndInlineOperationRefactoring implements Refactoring {
     private List<StatementNodeTree> inlinedCodeFragmentsInTargetOperation;
 
     public MoveAndInlineOperationRefactoring(DeclarationNodeTree targetOperationBeforeInline, DeclarationNodeTree targetOperationAfterInline,
-                                             DeclarationNodeTree inlinedOperation) {
+                                             DeclarationNodeTree inlinedOperation, Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements) {
         this.targetOperationBeforeInline = targetOperationBeforeInline;
         this.targetOperationAfterInline = targetOperationAfterInline;
         this.inlinedOperation = inlinedOperation;
-        this.inlinedCodeFragmentsFromInlinedOperation = inlinedOperation.getMethodNode().getMatchedStatements();
+        this.inlinedCodeFragmentsFromInlinedOperation = new ArrayList<>();
+        this.inlinedCodeFragmentsInTargetOperation = new ArrayList<>();
+        for (Pair<StatementNodeTree, StatementNodeTree> matchedStatement : matchedStatements) {
+            StatementNodeTree left = matchedStatement.getLeft();
+            StatementNodeTree right = matchedStatement.getRight();
+            if(left.getRoot() == inlinedOperation.getMethodNode() && right.getRoot() == targetOperationAfterInline.getMethodNode()) {
+                inlinedCodeFragmentsFromInlinedOperation.add(left);
+                inlinedCodeFragmentsInTargetOperation.add(right);
+            }
+        }
         inlinedCodeFragmentsFromInlinedOperation.sort(Comparator.comparingInt(StatementNodeTree::getPosition));
-        this.inlinedCodeFragmentsInTargetOperation = targetOperationAfterInline.getMethodNode().getMatchedStatements();
         inlinedCodeFragmentsInTargetOperation.sort(Comparator.comparingInt(StatementNodeTree::getPosition));
     }
 

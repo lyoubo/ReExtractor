@@ -889,10 +889,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         boolean isMove = !oldEntity.getNamespace().equals(extractedEntity.getNamespace()) &&
                                 !matchedEntities.contains(Pair.of(oldEntity.getParent(), extractedEntity.getParent()));
                         if (isMove) {
-                            ExtractAndMoveOperationRefactoring refactoring = new ExtractAndMoveOperationRefactoring(oldEntity, newEntity, extractedEntity);
+                            ExtractAndMoveOperationRefactoring refactoring = new ExtractAndMoveOperationRefactoring(oldEntity, newEntity, extractedEntity, matchedStatements);
                             refactorings.add(refactoring);
                         } else {
-                            ExtractOperationRefactoring refactoring = new ExtractOperationRefactoring(oldEntity, newEntity, extractedEntity);
+                            ExtractOperationRefactoring refactoring = new ExtractOperationRefactoring(oldEntity, newEntity, extractedEntity, matchedStatements);
                             refactorings.add(refactoring);
                         }
                     }
@@ -1024,10 +1024,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         boolean isMove = !inlinedEntity.getNamespace().equals(newEntity.getNamespace()) &&
                                 !matchedEntities.contains(Pair.of(inlinedEntity.getParent(), newEntity.getParent()));
                         if (isMove) {
-                            MoveAndInlineOperationRefactoring refactoring = new MoveAndInlineOperationRefactoring(oldEntity, newEntity, inlinedEntity);
+                            MoveAndInlineOperationRefactoring refactoring = new MoveAndInlineOperationRefactoring(oldEntity, newEntity, inlinedEntity, matchedStatements);
                             refactorings.add(refactoring);
                         } else {
-                            InlineOperationRefactoring refactoring = new InlineOperationRefactoring(oldEntity, newEntity, inlinedEntity);
+                            InlineOperationRefactoring refactoring = new InlineOperationRefactoring(oldEntity, newEntity, inlinedEntity, matchedStatements);
                             refactorings.add(refactoring);
                         }
                     }

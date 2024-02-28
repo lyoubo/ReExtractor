@@ -1,5 +1,6 @@
 package org.reextractor.refactoring;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.reextractor.util.MethodUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
@@ -8,6 +9,7 @@ import org.remapper.dto.StatementNodeTree;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 public class ExtractAndMoveOperationRefactoring implements Refactoring {
 
@@ -18,13 +20,21 @@ public class ExtractAndMoveOperationRefactoring implements Refactoring {
     private List<StatementNodeTree> extractedCodeFragmentsToExtractedOperation;
 
     public ExtractAndMoveOperationRefactoring(DeclarationNodeTree sourceOperationBeforeExtraction, DeclarationNodeTree sourceOperationAfterExtraction,
-                                              DeclarationNodeTree extractedOperation) {
+                                              DeclarationNodeTree extractedOperation, Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements) {
         this.sourceOperationBeforeExtraction = sourceOperationBeforeExtraction;
         this.sourceOperationAfterExtraction = sourceOperationAfterExtraction;
         this.extractedOperation = extractedOperation;
-        this.extractedCodeFragmentsFromSourceOperation = sourceOperationBeforeExtraction.getMethodNode().getMatchedStatements();
+        this.extractedCodeFragmentsFromSourceOperation = new ArrayList<>();
+        this.extractedCodeFragmentsToExtractedOperation = new ArrayList<>();
+        for (Pair<StatementNodeTree, StatementNodeTree> matchedStatement : matchedStatements) {
+            StatementNodeTree left = matchedStatement.getLeft();
+            StatementNodeTree right = matchedStatement.getRight();
+            if(left.getRoot() == sourceOperationBeforeExtraction.getMethodNode() && right.getRoot() == extractedOperation.getMethodNode()) {
+                extractedCodeFragmentsFromSourceOperation.add(left);
+                extractedCodeFragmentsToExtractedOperation.add(right);
+            }
+        }
         extractedCodeFragmentsFromSourceOperation.sort(Comparator.comparingInt(StatementNodeTree::getPosition));
-        this.extractedCodeFragmentsToExtractedOperation = extractedOperation.getMethodNode().getMatchedStatements();
         extractedCodeFragmentsToExtractedOperation.sort(Comparator.comparingInt(StatementNodeTree::getPosition));
     }
 

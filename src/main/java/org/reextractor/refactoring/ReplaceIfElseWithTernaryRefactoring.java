@@ -71,7 +71,7 @@ public class ReplaceIfElseWithTernaryRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(ifConditional);
+        sb.append(ifConditional.getExpression());
         sb.append(" with ");
         sb.append(ternaryOperator.getExpression().lastIndexOf(";\n") != -1 ? ternaryOperator.getExpression().substring(0, ternaryOperator.getExpression().lastIndexOf(";\n")) : ternaryOperator);
         sb.append(" in method ");
