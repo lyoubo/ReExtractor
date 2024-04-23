@@ -4,10 +4,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.reextractor.util.MethodUtils;
 import org.reextractor.util.VariableUtils;
-import org.remapper.dto.CodeRange;
-import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.LocationInfo;
-import org.remapper.dto.StatementNodeTree;
+import org.remapper.dto.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,8 +68,12 @@ public class ExtractVariableRefactoring implements Refactoring {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
         sb.append(VariableUtils.variable2String(variableDeclaration));
-        sb.append(" in method ");
-        sb.append(MethodUtils.method2String(operationAfter));
+        if (operationAfter.getType() == EntityType.INITIALIZER) {
+            sb.append(" in initializer ");
+        } else {
+            sb.append(" in method ");
+            sb.append(MethodUtils.method2String(operationAfter));
+        }
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();

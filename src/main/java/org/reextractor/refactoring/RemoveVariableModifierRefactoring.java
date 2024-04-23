@@ -6,6 +6,7 @@ import org.reextractor.util.MethodUtils;
 import org.reextractor.util.VariableUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
+import org.remapper.dto.EntityType;
 import org.remapper.dto.LocationInfo;
 
 import java.util.ArrayList;
@@ -68,8 +69,12 @@ public class RemoveVariableModifierRefactoring implements Refactoring {
         sb.append(modifier);
         sb.append(" in variable ");
         sb.append(VariableUtils.variable2String(variableBefore));
-        sb.append(" in method ");
-        sb.append(MethodUtils.method2String(operationBefore));
+        if (operationAfter.getType() == EntityType.INITIALIZER) {
+            sb.append(" in initializer ");
+        } else {
+            sb.append(" in method ");
+            sb.append(MethodUtils.method2String(operationBefore));
+        }
         sb.append(" from class ");
         sb.append(operationBefore.getNamespace());
         return sb.toString();

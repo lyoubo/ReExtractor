@@ -3,6 +3,7 @@ package org.reextractor.util;
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.internal.core.dom.NaiveASTFlattener;
 import org.remapper.dto.DeclarationNodeTree;
+import org.remapper.dto.EntityType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,7 +37,7 @@ public class MethodUtils {
                             }
                         }
                     }
-                    String name = methodDeclaration.getName().getIdentifier();
+                    /*String name = methodDeclaration.getName().getIdentifier();
                     Type returnType = methodDeclaration.getReturnType2();
                     if ((name.startsWith("is") || name.startsWith("has")) && (parameters.size() == 0) &&
                             returnType != null && returnType.toString().equals("boolean")) {
@@ -44,7 +45,7 @@ public class MethodUtils {
                     }
                     if (statement.toString().equals("return null;\n")) {
                         return true;
-                    }
+                    }*/
                 }
             }
         }
@@ -79,6 +80,8 @@ public class MethodUtils {
     }
 
     public static String method2String(DeclarationNodeTree method) {
+        if (method.getType() == EntityType.INITIALIZER)
+            return "initializer";
         MethodDeclaration methodDeclaration = (MethodDeclaration) method.getDeclaration();
         StringBuilder sb = new StringBuilder();
         int methodModifiers = methodDeclaration.getModifiers();

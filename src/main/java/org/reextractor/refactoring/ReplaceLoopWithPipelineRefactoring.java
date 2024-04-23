@@ -1,10 +1,7 @@
 package org.reextractor.refactoring;
 
 import org.reextractor.util.MethodUtils;
-import org.remapper.dto.CodeRange;
-import org.remapper.dto.DeclarationNodeTree;
-import org.remapper.dto.StatementNodeTree;
-import org.remapper.dto.StatementType;
+import org.remapper.dto.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -69,8 +66,12 @@ public class ReplaceLoopWithPipelineRefactoring implements Refactoring {
         sb.append(loop.getExpression());
         sb.append(" with ");
         sb.append(pipeline.getExpression().strip());
-        sb.append(" in method ");
-        sb.append(MethodUtils.method2String(operationAfter));
+        if (operationAfter.getType() == EntityType.INITIALIZER) {
+            sb.append(" in initializer ");
+        } else {
+            sb.append(" in method ");
+            sb.append(MethodUtils.method2String(operationAfter));
+        }
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();

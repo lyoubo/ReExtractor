@@ -53,9 +53,9 @@ public class ExtractSuperClassRefactoring implements Refactoring {
         sb.append(" from classes [");
         for (DeclarationNodeTree subclass : subclassSetBefore) {
             sb.append(subclass.getNamespace()).append(".").append(subclass.getName());
-            sb.append(",");
+            sb.append(", ");
         }
-        sb.delete(sb.length() - 1, sb.length());
+        sb.delete(sb.length() - 2, sb.length());
         sb.append("]");
         return sb.toString();
     }

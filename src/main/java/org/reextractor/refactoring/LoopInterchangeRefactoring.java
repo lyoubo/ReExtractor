@@ -3,6 +3,7 @@ package org.reextractor.refactoring;
 import org.reextractor.util.MethodUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
+import org.remapper.dto.EntityType;
 import org.remapper.dto.StatementNodeTree;
 
 import java.util.ArrayList;
@@ -59,8 +60,12 @@ public class LoopInterchangeRefactoring implements Refactoring {
         sb.append(originalLoop);
         sb.append(" to ");
         sb.append(interchangedLoop);
-        sb.append(" in method ");
-        sb.append(MethodUtils.method2String(operationAfter));
+        if (operationAfter.getType() == EntityType.INITIALIZER) {
+            sb.append(" in initializer ");
+        } else {
+            sb.append(" in method ");
+            sb.append(MethodUtils.method2String(operationAfter));
+        }
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();

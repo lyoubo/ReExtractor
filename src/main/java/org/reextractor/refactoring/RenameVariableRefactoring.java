@@ -6,6 +6,7 @@ import org.reextractor.util.MethodUtils;
 import org.reextractor.util.VariableUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
+import org.remapper.dto.EntityType;
 import org.remapper.dto.LocationInfo;
 
 import java.util.ArrayList;
@@ -66,8 +67,12 @@ public class RenameVariableRefactoring implements Refactoring {
         sb.append(VariableUtils.variable2String(originalVariable));
         sb.append(" to ");
         sb.append(VariableUtils.variable2String(renamedVariable));
-        sb.append(" in method ");
-        sb.append(MethodUtils.method2String(operationAfter));
+        if (operationAfter.getType() == EntityType.INITIALIZER) {
+            sb.append(" in initializer ");
+        } else {
+            sb.append(" in method ");
+            sb.append(MethodUtils.method2String(operationAfter));
+        }
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();

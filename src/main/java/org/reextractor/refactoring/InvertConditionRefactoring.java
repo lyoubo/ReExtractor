@@ -3,6 +3,7 @@ package org.reextractor.refactoring;
 import org.reextractor.util.MethodUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
+import org.remapper.dto.EntityType;
 import org.remapper.dto.StatementNodeTree;
 
 import java.util.ArrayList;
@@ -59,8 +60,12 @@ public class InvertConditionRefactoring implements Refactoring {
         sb.append(originalConditional.getExpression());
         sb.append(" to ");
         sb.append(invertedConditional.getExpression());
-        sb.append(" in method ");
-        sb.append(MethodUtils.method2String(operationAfter));
+        if (operationAfter.getType() == EntityType.INITIALIZER) {
+            sb.append(" in initializer ");
+        } else {
+            sb.append(" in method ");
+            sb.append(MethodUtils.method2String(operationAfter));
+        }
         sb.append(" from class ");
         sb.append(operationAfter.getNamespace());
         return sb.toString();
