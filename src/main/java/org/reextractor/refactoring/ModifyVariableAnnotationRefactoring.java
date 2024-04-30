@@ -86,7 +86,7 @@ public class ModifyVariableAnnotationRefactoring implements Refactoring {
         sb.append(" in variable ");
         sb.append(VariableUtils.variable2String(variableAfter));
         if (operationAfter.getType() == EntityType.INITIALIZER) {
-            sb.append(" in initializer ");
+            sb.append(" in initializer " + operationAfter.getParent().getName());
         } else {
             sb.append(" in method ");
             sb.append(MethodUtils.method2String(operationAfter));

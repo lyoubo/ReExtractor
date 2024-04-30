@@ -1,8 +1,6 @@
 package org.reextractor.refactoring;
 
-import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.LambdaExpression;
+import org.eclipse.jdt.core.dom.*;
 import org.reextractor.util.MethodUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
@@ -15,11 +13,18 @@ import java.util.List;
 public class ReplaceAnonymousWithLambdaRefactoring implements Refactoring {
 
     private AnonymousClassDeclaration anonymous;
-    private LambdaExpression lambda;
+    private Expression lambda;
     private DeclarationNodeTree operationBefore;
     private DeclarationNodeTree operationAfter;
 
     public ReplaceAnonymousWithLambdaRefactoring(AnonymousClassDeclaration anonymous, LambdaExpression lambda, DeclarationNodeTree operationBefore, DeclarationNodeTree operationAfter) {
+        this.anonymous = anonymous;
+        this.lambda = lambda;
+        this.operationBefore = operationBefore;
+        this.operationAfter = operationAfter;
+    }
+
+    public ReplaceAnonymousWithLambdaRefactoring(AnonymousClassDeclaration anonymous, MethodReference lambda, DeclarationNodeTree operationBefore, DeclarationNodeTree operationAfter) {
         this.anonymous = anonymous;
         this.lambda = lambda;
         this.operationBefore = operationBefore;
@@ -67,7 +72,7 @@ public class ReplaceAnonymousWithLambdaRefactoring implements Refactoring {
         sb.append(" with ");
         sb.append(MethodUtils.getLambdaString(lambda));
         if (operationAfter.getType() == EntityType.INITIALIZER) {
-            sb.append(" in initializer ");
+            sb.append(" in initializer " + operationAfter.getParent().getName());
         } else {
             sb.append(" in method ");
             sb.append(MethodUtils.method2String(operationAfter));
@@ -81,7 +86,7 @@ public class ReplaceAnonymousWithLambdaRefactoring implements Refactoring {
         return anonymous;
     }
 
-    public LambdaExpression getLambda() {
+    public Expression getLambda() {
         return lambda;
     }
 

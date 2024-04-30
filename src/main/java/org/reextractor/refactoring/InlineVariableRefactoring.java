@@ -69,7 +69,7 @@ public class InlineVariableRefactoring implements Refactoring {
         sb.append(getName()).append("\t");
         sb.append(VariableUtils.variable2String(variableDeclaration));
         if (operationAfter.getType() == EntityType.INITIALIZER) {
-            sb.append(" in initializer ");
+            sb.append(" in initializer " + operationAfter.getParent().getName());
         } else {
             sb.append(" in method ");
             sb.append(MethodUtils.method2String(operationBefore));

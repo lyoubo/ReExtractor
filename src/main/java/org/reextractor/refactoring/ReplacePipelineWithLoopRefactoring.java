@@ -67,7 +67,7 @@ public class ReplacePipelineWithLoopRefactoring implements Refactoring {
         sb.append(" with ");
         sb.append(loop.getExpression());
         if (operationAfter.getType() == EntityType.INITIALIZER) {
-            sb.append(" in initializer ");
+            sb.append(" in initializer " + operationAfter.getParent().getName());
         } else {
             sb.append(" in method ");
             sb.append(MethodUtils.method2String(operationAfter));

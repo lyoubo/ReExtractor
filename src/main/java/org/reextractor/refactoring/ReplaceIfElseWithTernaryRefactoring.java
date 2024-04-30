@@ -72,7 +72,7 @@ public class ReplaceIfElseWithTernaryRefactoring implements Refactoring {
         sb.append(" with ");
         sb.append(ternaryOperator.getExpression().lastIndexOf(";\n") != -1 ? ternaryOperator.getExpression().substring(0, ternaryOperator.getExpression().lastIndexOf(";\n")) : ternaryOperator);
         if (operationAfter.getType() == EntityType.INITIALIZER) {
-            sb.append(" in initializer ");
+            sb.append(" in initializer " + operationAfter.getParent().getName());
         } else {
             sb.append(" in method ");
             sb.append(MethodUtils.method2String(operationAfter));

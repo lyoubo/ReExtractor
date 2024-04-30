@@ -68,7 +68,7 @@ public class RenameVariableRefactoring implements Refactoring {
         sb.append(" to ");
         sb.append(VariableUtils.variable2String(renamedVariable));
         if (operationAfter.getType() == EntityType.INITIALIZER) {
-            sb.append(" in initializer ");
+            sb.append(" in initializer " + operationAfter.getParent().getName());
         } else {
             sb.append(" in method ");
             sb.append(MethodUtils.method2String(operationAfter));

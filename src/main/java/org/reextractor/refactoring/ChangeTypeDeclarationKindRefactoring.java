@@ -3,6 +3,7 @@ package org.reextractor.refactoring;
 import org.reextractor.util.ClassUtils;
 import org.remapper.dto.CodeRange;
 import org.remapper.dto.DeclarationNodeTree;
+import org.remapper.dto.EntityType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,9 +45,9 @@ public class ChangeTypeDeclarationKindRefactoring implements Refactoring {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append("\t");
-        sb.append(classBefore.getType().getName());
+        sb.append(classBefore.getType() == EntityType.ANNOTATION_TYPE ? "annotation" : classBefore.getType().getName().toLowerCase());
         sb.append(" to ");
-        sb.append(classAfter.getType().getName());
+        sb.append(classAfter.getType() == EntityType.ANNOTATION_TYPE ? "annotation" : classAfter.getType().getName().toLowerCase());
         sb.append(" in type ");
         sb.append(ClassUtils.typeDeclaration2String(classAfter));
         return sb.toString();

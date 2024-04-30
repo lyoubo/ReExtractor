@@ -179,6 +179,13 @@ public class MethodUtils {
         return printer.getResult();
     }
 
+    public static String getLambdaString(Expression lambda) {
+        if (lambda instanceof LambdaExpression)
+            return getLambdaString((LambdaExpression) lambda);
+        else
+            return lambda.toString();
+    }
+
     public static String getLambdaString(LambdaExpression lambda) {
         StringBuilder sb = new StringBuilder();
         boolean hasParentheses = lambda.hasParentheses();
