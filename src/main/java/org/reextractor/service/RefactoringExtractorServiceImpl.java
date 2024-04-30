@@ -2885,7 +2885,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         deletedStatement.getType() == StatementType.WHILE_STATEMENT || deletedStatement.getType() == StatementType.DO_STATEMENT) &&
                         (addedStatement.getType() == StatementType.VARIABLE_DECLARATION_STATEMENT || addedStatement.getType() == StatementType.EXPRESSION_STATEMENT ||
                                 addedStatement.getType() == StatementType.RETURN_STATEMENT)) {
-                    if (MethodUtils.isStreamAPI(addedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
+                    if (MethodUtils.isStreamAPI(addedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
                         DeclarationNodeTree oldEntity = deletedStatement.getRoot().getMethodEntity();
                         DeclarationNodeTree newEntity = addedStatement.getRoot().getMethodEntity();
                         ReplaceLoopWithPipelineRefactoring refactoring = new ReplaceLoopWithPipelineRefactoring(deletedStatement, addedStatement, oldEntity, newEntity);
@@ -2897,7 +2897,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         addedStatement.getType() == StatementType.WHILE_STATEMENT || addedStatement.getType() == StatementType.DO_STATEMENT) &&
                         (deletedStatement.getType() == StatementType.VARIABLE_DECLARATION_STATEMENT || deletedStatement.getType() == StatementType.EXPRESSION_STATEMENT ||
                                 deletedStatement.getType() == StatementType.RETURN_STATEMENT)) {
-                    if (MethodUtils.isStreamAPI(deletedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
+                    if (MethodUtils.isStreamAPI(deletedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
                         DeclarationNodeTree oldEntity = deletedStatement.getRoot().getMethodEntity();
                         DeclarationNodeTree newEntity = addedStatement.getRoot().getMethodEntity();
                         ReplacePipelineWithLoopRefactoring refactoring = new ReplacePipelineWithLoopRefactoring(deletedStatement, addedStatement, oldEntity, newEntity);
