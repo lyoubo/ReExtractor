@@ -96,6 +96,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         Set<DeclarationNodeTree> extractedEntities = matchPair.getExtractedEntities();
         Set<DeclarationNodeTree> addedEntities = matchPair.getAddedEntities();
         Set<DeclarationNodeTree> deletedEntities = matchPair.getDeletedEntities();
+        Map<DeclarationNodeTree, Set<Pair<DeclarationNodeTree, DeclarationNodeTree>>> introducedObjects = matchPair.getIntroducedObjects();
         Set<Pair<MethodNode, MethodNode>> methodNodePairs = mapMethodNodePairs(matchedEntities, inlinedEntities, extractedEntities);
         Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements = matchPair.getMatchedStatements();
         Set<StatementNodeTree> deletedStatements = matchPair.getDeletedStatements();
@@ -103,7 +104,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
 
         detectRefactoringsInMatchedEntities(matchedEntities, refactorings);
         detectRefactoringsBetweenMatchedAndAddedEntities(matchPair, matchedEntities, addedEntities, matchedStatements, refactorings);
-        detectRefactoringsBetweenMatchedDeletedEntities(matchedEntities, deletedEntities, matchedStatements, matchPair, refactorings);
+        detectRefactoringsBetweenMatchedDeletedEntities(matchedEntities, deletedEntities, matchedStatements, refactorings);
+        detectRefactoringsInIntroducedObjects(introducedObjects, refactorings);
 
         detectRefactoringsInMatchedStatements(matchedStatements, refactorings);
         detectRefactoringsBetweenMatchedAndAddedStatements(methodNodePairs, matchedStatements, addedStatements, refactorings);
@@ -889,28 +891,29 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                                                                   Set<DeclarationNodeTree> addedEntities,
                                                                   Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
                                                                   List<Refactoring> refactorings) {
-        for (DeclarationNodeTree extractedEntity : addedEntities) {
-            if (extractedEntity.getType() != EntityType.METHOD)
+        for (DeclarationNodeTree addedEntity : addedEntities) {
+            if (addedEntity.getType() != EntityType.METHOD)
                 continue;
-            List<EntityInfo> dependencies = extractedEntity.getDependencies();
+            List<EntityInfo> dependencies = addedEntity.getDependencies();
             for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : matchedEntities) {
                 DeclarationNodeTree oldEntity = pair.getLeft();
                 DeclarationNodeTree newEntity = pair.getRight();
                 if (oldEntity.getType() == EntityType.METHOD && newEntity.getType() == EntityType.METHOD) {
-                    if (!dependencies.contains(newEntity.getEntity()) && !hasMethodInvocation(newEntity, extractedEntity))
+                    if (!dependencies.contains(newEntity.getEntity()) && !hasMethodInvocation(newEntity, addedEntity))
                         continue;
                     if (MethodUtils.isNewFunction(oldEntity.getDeclaration(), newEntity.getDeclaration()))
                         continue;
-                    if (MethodUtils.isGetter((MethodDeclaration) extractedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) extractedEntity.getDeclaration()))
+                    if (MethodUtils.isGetter((MethodDeclaration) addedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) addedEntity.getDeclaration()))
                         continue;
+                    DeclarationNodeTree extractedEntity = getDelegatedMethod(addedEntity, addedEntities);
                     boolean isExtracted = isExtractedFromStatement(oldEntity, newEntity, extractedEntity, matchedStatements, refactorings);
                     double dice = DiceFunction.calculateBodyDice((LeafNode) oldEntity, (LeafNode) newEntity, (LeafNode) extractedEntity);
-                    if (dice >= 0.15 || isExtracted ||
-                            matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, extractedEntity, true, matchedStatements)) {
-                        boolean isMove = !oldEntity.getNamespace().equals(extractedEntity.getNamespace()) &&
-                                !matchedEntities.contains(Pair.of(oldEntity.getParent(), extractedEntity.getParent()));
+                    if (dice >= 0.25 || isExtracted ||
+                            matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, extractedEntity, true, matchedStatements, dice)) {
+                        boolean isMove = !oldEntity.getNamespace().equals(addedEntity.getNamespace()) &&
+                                !matchedEntities.contains(Pair.of(oldEntity.getParent(), addedEntity.getParent()));
                         double ref1 = DiceFunction.calculateReferenceSimilarity(matchPair, oldEntity, newEntity);
-                        double ref2 = DiceFunction.calculateReferenceSimilarity(matchPair, oldEntity, extractedEntity);
+                        double ref2 = DiceFunction.calculateReferenceSimilarity(matchPair, oldEntity, addedEntity);
                         double dice1 = DiceFunction.calculateDiceSimilarity((LeafNode) oldEntity, (LeafNode) newEntity);
                         double dice2 = DiceFunction.calculateDiceSimilarity((LeafNode) oldEntity, (LeafNode) extractedEntity);
                         MethodDeclaration declaration = (MethodDeclaration) newEntity.getDeclaration();
@@ -923,19 +926,17 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                             }
                         }
                         if (isMove) {
-                            if (ref2 > ref1 && dice2 > dice1 && isDeprecated) {
-                                MoveAndRenameOperationRefactoring refactoring = new MoveAndRenameOperationRefactoring(oldEntity, newEntity);
-                                refactorings.add(refactoring);
-                            } else {
-                                ExtractAndMoveOperationRefactoring refactoring = new ExtractAndMoveOperationRefactoring(oldEntity, newEntity, extractedEntity, matchedStatements);
+                            MethodDeclaration extractedMethod = (MethodDeclaration) extractedEntity.getDeclaration();
+                            if (!extractedMethod.isConstructor()) {
+                                ExtractAndMoveOperationRefactoring refactoring = new ExtractAndMoveOperationRefactoring(oldEntity, newEntity, addedEntity, matchedStatements);
                                 refactorings.add(refactoring);
                             }
                         } else {
-                            if (ref2 > ref1 && dice2 > dice1 && isDeprecated) {
-                                RenameOperationRefactoring refactoring = new RenameOperationRefactoring(oldEntity, newEntity);
+                            if (ref2 > ref1 && dice2 > dice1 && isDeprecated && !oldEntity.getName().equals(addedEntity.getName())) {
+                                RenameOperationRefactoring refactoring = new RenameOperationRefactoring(oldEntity, addedEntity);
                                 refactorings.add(refactoring);
                             } else {
-                                ExtractOperationRefactoring refactoring = new ExtractOperationRefactoring(oldEntity, newEntity, extractedEntity, matchedStatements);
+                                ExtractOperationRefactoring refactoring = new ExtractOperationRefactoring(oldEntity, newEntity, addedEntity, matchedStatements);
                                 refactorings.add(refactoring);
                             }
                         }
@@ -947,6 +948,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         if (allOperations.size() == 1 && allControls.isEmpty() && allBlocks.size() == 1 &&
                                 allOperations.get(0).getType() == StatementType.RETURN_STATEMENT && allOperations.get(0).getExpression().startsWith("return ")) {
                             isExtracted = false;
+                            String name = extractedEntity.getName();
                             for (Pair<StatementNodeTree, StatementNodeTree> pair2 : matchedStatements) {
                                 StatementNodeTree oldStatement = pair2.getLeft();
                                 StatementNodeTree newStatement = pair2.getRight();
@@ -961,7 +963,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                                         location.getStatement().accept(new ASTVisitor() {
                                             @Override
                                             public boolean visit(MethodInvocation node) {
-                                                if (node.getName().getIdentifier().equals(extractedEntity.getName())) {
+                                                if (node.getName().getIdentifier().equals(name)) {
                                                     invocations.add(node);
                                                 }
                                                 return true;
@@ -1024,10 +1026,13 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                             boolean isMove = !oldEntity.getNamespace().equals(extractedEntity.getNamespace()) &&
                                     !matchedEntities.contains(Pair.of(oldEntity.getParent(), extractedEntity.getParent()));
                             if (isMove) {
-                                ExtractAndMoveOperationRefactoring refactoring = new ExtractAndMoveOperationRefactoring(oldEntity, newEntity, extractedEntity, matchedStatements);
-                                refactorings.add(refactoring);
+                                MethodDeclaration extractedMethod = (MethodDeclaration) extractedEntity.getDeclaration();
+                                if (!extractedMethod.isConstructor()) {
+                                    ExtractAndMoveOperationRefactoring refactoring = new ExtractAndMoveOperationRefactoring(oldEntity, newEntity, addedEntity, matchedStatements);
+                                    refactorings.add(refactoring);
+                                }
                             } else {
-                                ExtractOperationRefactoring refactoring = new ExtractOperationRefactoring(oldEntity, newEntity, extractedEntity, matchedStatements);
+                                ExtractOperationRefactoring refactoring = new ExtractOperationRefactoring(oldEntity, newEntity, addedEntity, matchedStatements);
                                 refactorings.add(refactoring);
                             }
                         }
@@ -1038,6 +1043,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         for (DeclarationNodeTree addedEntity : addedEntities) {
             if (addedEntity.getType() == EntityType.CLASS || addedEntity.getType() == EntityType.INTERFACE) {
                 Set<DeclarationNodeTree> mapping = new HashSet<>();
+                Map<DeclarationNodeTree, DeclarationNodeTree> mapping2 = new HashMap<>();
                 Map<DeclarationNodeTree, DeclarationNodeTree> extractedOperations = new TreeMap<>(Comparator.comparingInt(startLine -> startLine.getLocationInfo().getStartLine()));
                 Map<DeclarationNodeTree, DeclarationNodeTree> extractedAttributes = new TreeMap<>(Comparator.comparingInt(startLine -> startLine.getLocationInfo().getStartLine()));
                 for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : matchedEntities) {
@@ -1060,7 +1066,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                                     for (DeclarationNodeTree child : children) {
                                         if (child.getType() == newEntity.getType() && child.getName().equals(newEntity.getName()) &&
                                                 isSameSignature(child, newEntity)) {
-                                            mapping.add(oldEntity.getParent());
+                                            mapping2.put(oldEntity.getParent(), newEntity.getParent());
                                             extractedOperations.put(oldEntity, child);
                                         }
                                     }
@@ -1073,6 +1079,18 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         extractedAttributes.put(oldEntity, newEntity);
                     }
                 }
+                Set<DeclarationNodeTree> deletion = new HashSet<>();
+                for (DeclarationNodeTree key1 : mapping2.keySet()) {
+                    for (DeclarationNodeTree key2 : mapping2.keySet()) {
+                        if (key1 == key2) continue;
+                        TypeDeclaration typeDeclaration1 = (TypeDeclaration) mapping2.get(key1).getDeclaration();
+                        TypeDeclaration typeDeclaration2 = (TypeDeclaration) mapping2.get(key2).getDeclaration();
+                        if (isSubTypeOf(typeDeclaration2, typeDeclaration1))
+                            deletion.add(key2);
+                    }
+                }
+                mapping.addAll(mapping2.keySet());
+                mapping.removeAll(deletion);
                 Set<DeclarationNodeTree> subclassSetBefore = new LinkedHashSet<>();
                 Set<DeclarationNodeTree> subclassSetAfter = new LinkedHashSet<>();
                 for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : matchedEntities) {
@@ -1107,6 +1125,45 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                 }
             }
         }
+    }
+
+    private DeclarationNodeTree getDelegatedMethod(DeclarationNodeTree proxyMethod, Set<DeclarationNodeTree> methods) {
+        MethodNode methodNode = proxyMethod.getMethodNode();
+        if (methodNode.getAllOperations().size() == 1 && methodNode.getAllBlocks().size() == 1 && methodNode.getAllControls().isEmpty()) {
+            StatementNodeTree snt = methodNode.getAllOperations().get(0);
+            MethodInvocation methodInvocation = null;
+            boolean isProxy = false;
+            if (snt.getType() == StatementType.EXPRESSION_STATEMENT) {
+                ExpressionStatement statement = (ExpressionStatement) snt.getStatement();
+                if (statement.getExpression() instanceof MethodInvocation) {
+                    isProxy = true;
+                    methodInvocation = (MethodInvocation) statement.getExpression();
+                }
+            }
+            if (snt.getType() == StatementType.RETURN_STATEMENT) {
+                ReturnStatement statement = (ReturnStatement) snt.getStatement();
+                if (statement.getExpression() instanceof MethodInvocation) {
+                    isProxy = true;
+                    methodInvocation = (MethodInvocation) statement.getExpression();
+                }
+            }
+            if (isProxy) {
+                for (DeclarationNodeTree method : methods) {
+                    if (method == proxyMethod)
+                        continue;
+                    if (method.getType() != EntityType.METHOD)
+                        continue;
+                    List<EntityInfo> dependencies = method.getDependencies();
+                    if (!dependencies.contains(proxyMethod.getEntity()))
+                        continue;
+                    if (method.getName().equals(methodInvocation.getName().getIdentifier()) &&
+                            ((MethodDeclaration) method.getDeclaration()).parameters().size() == methodInvocation.arguments().size()) {
+                        return method;
+                    }
+                }
+            }
+        }
+        return proxyMethod;
     }
 
     private boolean isSameSignature(DeclarationNodeTree dntBefore, DeclarationNodeTree dntCurrent) {
@@ -1374,7 +1431,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     return true;
                 }
             });
-            parameter.accept(new ASTVisitor() {
+            expression.accept(new ASTVisitor() {
                 @Override
                 public boolean visit(SimpleName node) {
                     list.add(node.getIdentifier());
@@ -1653,6 +1710,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         List<DeclarationNodeTree> children = node2.getParent().getChildren();
         for (DeclarationNodeTree child : children) {
             if (child.getType() != EntityType.METHOD) continue;
+            if (child == node1) continue;
+            if (child == node2) continue;
             MethodDeclaration declaration = (MethodDeclaration) child.getDeclaration();
             if (child.getName().equals(node2.getName()) && declaration2.parameters().size() == declaration.parameters().size())
                 return false;
@@ -1662,7 +1721,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
 
     private boolean matchedLOCAreGreaterThanUnmatchedLOC(DeclarationNodeTree oldEntity, DeclarationNodeTree newEntity,
                                                          DeclarationNodeTree anotherEntity, boolean isExtracted,
-                                                         Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements) {
+                                                         Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
+                                                         double dice) {
         MethodNode methodNode = anotherEntity.getMethodNode();
         List<StatementNodeTree> statements = methodNode.getMatchedStatements();
         List<StatementNodeTree> allOperations = methodNode.getAllOperations();
@@ -1675,7 +1735,10 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     StatementNodeTree oldStatement = pair.getLeft();
                     StatementNodeTree newStatement = pair.getRight();
                     if (snt == newStatement && oldStatement.getRoot().getMethodEntity() == oldEntity) {
-                        matchedLOC += 1;
+                        if (snt.getRoot() != snt.getHigherRoot() && snt.getType() == StatementType.RETURN_STATEMENT &&
+                                oldStatement.getType() != StatementType.RETURN_STATEMENT && dice < 0.15) ;
+                        else
+                            matchedLOC += 1;
                     }
                 }
             }
@@ -1690,46 +1753,53 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                 }
             }
         }
+        int others = 0;
         for (StatementNodeTree operation : allOperations) {
             StatementType type = operation.getType();
             if ((type == StatementType.RETURN_STATEMENT || type == StatementType.VARIABLE_DECLARATION_STATEMENT) && !operation.isMatched())
-                totalLOC -= 1;
+                others += 1;
         }
-        if (matchedLOC == 0) return false;
-        int unMatchedLOC = totalLOC - matchedLOC;
+        if (matchedLOC == 0)
+            return false;
+        int unMatchedLOC = totalLOC - matchedLOC - others;
+        if (2 * others >= totalLOC)
+            return dice > 0.15;
+        if (matchedLOC == 1 && methodNode.getAllOperations().size() == 2 && (methodNode.getAllOperations().get(0).isMatched() ||
+                methodNode.getAllOperations().get(1).isMatched()) && methodNode.getAllControls().size() == 1 &&
+                methodNode.getAllControls().get(0).getType() == StatementType.IF_STATEMENT && !methodNode.getAllControls().get(0).isMatched())
+            return true;
         return matchedLOC >= unMatchedLOC;
     }
 
     private void detectRefactoringsBetweenMatchedDeletedEntities(Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities,
                                                                  Set<DeclarationNodeTree> deletedEntities,
                                                                  Set<Pair<StatementNodeTree, StatementNodeTree>> matchedStatements,
-                                                                 MatchPair matchPair, List<Refactoring> refactorings) {
-        for (DeclarationNodeTree inlinedEntity : deletedEntities) {
-            if (inlinedEntity.getType() != EntityType.METHOD)
+                                                                 List<Refactoring> refactorings) {
+        for (DeclarationNodeTree deletedEntity : deletedEntities) {
+            if (deletedEntity.getType() != EntityType.METHOD)
                 continue;
-            List<EntityInfo> dependencies = inlinedEntity.getDependencies();
+            List<EntityInfo> dependencies = deletedEntity.getDependencies();
             for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : matchedEntities) {
                 DeclarationNodeTree oldEntity = pair.getLeft();
                 DeclarationNodeTree newEntity = pair.getRight();
                 if (oldEntity.getType() == EntityType.METHOD && newEntity.getType() == EntityType.METHOD) {
-                    if (inlinedEntity.getName().equals("checkCondition") && oldEntity.getName().equals("stripAffix"))
-                        System.out.println(1);
-                    if (!dependencies.contains(oldEntity.getEntity()) && !hasMethodInvocation(oldEntity, inlinedEntity))
+                    if (!dependencies.contains(oldEntity.getEntity()) && !hasMethodInvocation(oldEntity, deletedEntity))
                         continue;
                     if (MethodUtils.isNewFunction(newEntity.getDeclaration(), oldEntity.getDeclaration()))
                         continue;
-                    if (MethodUtils.isGetter((MethodDeclaration) inlinedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) inlinedEntity.getDeclaration()))
+                    if (MethodUtils.isGetter((MethodDeclaration) deletedEntity.getDeclaration()) || MethodUtils.isSetter((MethodDeclaration) deletedEntity.getDeclaration()))
                         continue;
+                    DeclarationNodeTree inlinedEntity = getDelegatedMethod(deletedEntity, deletedEntities);
                     double dice = DiceFunction.calculateBodyDice((LeafNode) newEntity, (LeafNode) oldEntity, (LeafNode) inlinedEntity);
-                    if (dice >= 0.15 ||
-                            matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, inlinedEntity, false, matchedStatements)) {
-                        boolean isMove = !inlinedEntity.getNamespace().equals(newEntity.getNamespace()) &&
-                                !matchedEntities.contains(Pair.of(inlinedEntity.getParent(), newEntity.getParent()));
+                    if (dice >= 0.25 ||
+                            matchedLOCAreGreaterThanUnmatchedLOC(oldEntity, newEntity, inlinedEntity, false, matchedStatements, dice)) {
+                        boolean isMove = !deletedEntity.getNamespace().equals(newEntity.getNamespace()) &&
+                                !matchedEntities.contains(Pair.of(deletedEntity.getParent(), newEntity.getParent()));
                         if (isMove) {
-                            MoveAndInlineOperationRefactoring refactoring = new MoveAndInlineOperationRefactoring(oldEntity, newEntity, inlinedEntity, matchedStatements);
+                            MoveAndInlineOperationRefactoring refactoring = new MoveAndInlineOperationRefactoring(oldEntity, newEntity, deletedEntity, matchedStatements);
                             refactorings.add(refactoring);
                         } else {
-                            InlineOperationRefactoring refactoring = new InlineOperationRefactoring(oldEntity, newEntity, inlinedEntity, matchedStatements);
+                            InlineOperationRefactoring refactoring = new InlineOperationRefactoring(oldEntity, newEntity, deletedEntity, matchedStatements);
                             refactorings.add(refactoring);
                         }
                     } else {
@@ -1740,6 +1810,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         if (allOperations.size() == 1 && allControls.isEmpty() && allBlocks.size() == 1 &&
                                 allOperations.get(0).getType() == StatementType.RETURN_STATEMENT && allOperations.get(0).getExpression().startsWith("return ")) {
                             boolean isInlined = false;
+                            String name = inlinedEntity.getName();
                             for (Pair<StatementNodeTree, StatementNodeTree> pair2 : matchedStatements) {
                                 StatementNodeTree oldStatement = pair2.getLeft();
                                 StatementNodeTree newStatement = pair2.getRight();
@@ -1754,7 +1825,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                                         location.getStatement().accept(new ASTVisitor() {
                                             @Override
                                             public boolean visit(MethodInvocation node) {
-                                                if (node.getName().getIdentifier().equals(inlinedEntity.getName())) {
+                                                if (node.getName().getIdentifier().equals(name)) {
                                                     invocations.add(node);
                                                 }
                                                 return true;
@@ -1788,15 +1859,42 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                             boolean isMove = !inlinedEntity.getNamespace().equals(newEntity.getNamespace()) &&
                                     !matchedEntities.contains(Pair.of(inlinedEntity.getParent(), newEntity.getParent()));
                             if (isMove) {
-                                MoveAndInlineOperationRefactoring refactoring = new MoveAndInlineOperationRefactoring(oldEntity, newEntity, inlinedEntity, matchedStatements);
+                                MoveAndInlineOperationRefactoring refactoring = new MoveAndInlineOperationRefactoring(oldEntity, newEntity, deletedEntity, matchedStatements);
                                 refactorings.add(refactoring);
                             } else {
-                                InlineOperationRefactoring refactoring = new InlineOperationRefactoring(oldEntity, newEntity, inlinedEntity, matchedStatements);
+                                InlineOperationRefactoring refactoring = new InlineOperationRefactoring(oldEntity, newEntity, deletedEntity, matchedStatements);
                                 refactorings.add(refactoring);
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void detectRefactoringsInIntroducedObjects(Map<DeclarationNodeTree, Set<Pair<DeclarationNodeTree, DeclarationNodeTree>>> introducedObjects,
+                                                       List<Refactoring> refactorings) {
+        for (DeclarationNodeTree extractedEntity : introducedObjects.keySet()) {
+            Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> value = introducedObjects.get(extractedEntity);
+            Map<Pair<DeclarationNodeTree, DeclarationNodeTree>, Map<DeclarationNodeTree, DeclarationNodeTree>> extractedAttributes = new LinkedHashMap<>();
+            for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : value) {
+                DeclarationNodeTree left = pair.getLeft();
+                DeclarationNodeTree right = pair.getRight();
+                if (left.getType() == EntityType.FIELD && right.getType() == EntityType.FIELD) {
+                    Pair<DeclarationNodeTree, DeclarationNodeTree> parentPair = Pair.of(left.getParent(), right.getParent());
+                    if (extractedAttributes.containsKey(parentPair)) {
+                        extractedAttributes.get(parentPair).put(left, right);
+                    } else {
+                        Map<DeclarationNodeTree, DeclarationNodeTree> map = new LinkedHashMap<>();
+                        map.put(left, right);
+                        extractedAttributes.put(parentPair, map);
+                    }
+                }
+            }
+            for (Pair<DeclarationNodeTree, DeclarationNodeTree> parentPair : extractedAttributes.keySet()) {
+                Map<DeclarationNodeTree, DeclarationNodeTree> attributes = extractedAttributes.get(parentPair);
+                ExtractClassRefactoring refactoring = new ExtractClassRefactoring(parentPair.getLeft(), parentPair.getRight(), extractedEntity, new HashMap<>(), attributes);
+                refactorings.add(refactoring);
             }
         }
     }
@@ -1932,12 +2030,14 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                     LambdaExpression newLambdaExpression = newLambdaExpressions.get(0);
                     List<VariableDeclaration> oldParameters = oldLambdaExpression.parameters();
                     List<VariableDeclaration> newParameters = newLambdaExpression.parameters();
-                    if (oldParameters.size() == 1 && newParameters.size() == 1) {
-                        VariableDeclaration oldFragment = oldParameters.get(0);
-                        VariableDeclaration newFragment = newParameters.get(0);
-                        if (!oldFragment.getName().getIdentifier().equals(newFragment.getName().getIdentifier())) {
-                            RenameVariableRefactoring refactoring = new RenameVariableRefactoring(oldFragment, newFragment, oldEntity, newEntity);
-                            refactorings.add(refactoring);
+                    if (oldParameters.size() == newParameters.size()) {
+                        for (int i = 0; i < oldParameters.size(); i++) {
+                            VariableDeclaration oldFragment = oldParameters.get(i);
+                            VariableDeclaration newFragment = newParameters.get(i);
+                            if (!oldFragment.getName().getIdentifier().equals(newFragment.getName().getIdentifier())) {
+                                RenameVariableRefactoring refactoring = new RenameVariableRefactoring(oldFragment, newFragment, oldEntity, newEntity);
+                                refactorings.add(refactoring);
+                            }
                         }
                     }
                 }
@@ -1957,8 +2057,14 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         return true;
                     }
                 });
+                Set<MethodDeclaration> matched = new HashSet<>();
                 for (MethodDeclaration oldMethod : oldMethods) {
                     for (MethodDeclaration newMethod : newMethods) {
+                        if (matched.contains(newMethod)) continue;
+                        if (oldMethod.toString().equals(newMethod.toString())) {
+                            matched.add(newMethod);
+                            break;
+                        }
                         String originalType = oldMethod.getReturnType2() == null ? "" : oldMethod.getReturnType2().toString();
                         String changedType = newMethod.getReturnType2() == null ? "" : newMethod.getReturnType2().toString();
                         if (oldMethod.getName().getIdentifier().equals(newMethod.getName().getIdentifier()) &&
@@ -1988,7 +2094,25 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                                 !StringUtils.equals(originalType, changedType) && oldMethod.getBody() != null && newMethod.getBody() != null &&
                                 oldMethod.getBody().toString().equals(newMethod.getBody().toString()) &&
                                 oldMethod.parameters().size() == newMethod.parameters().size() && equalsParameters(oldMethod, newMethod)) {
-                            ChangeReturnTypeRefactoring refactoring = new ChangeReturnTypeRefactoring(oldMethod.getReturnType2(), newMethod.getReturnType2(), oldEntity, newEntity);
+                            DeclarationNodeTree oldLeafNode = new LeafNode((CompilationUnit) oldMethod.getRoot(), oldEntity.getFilePath(), oldMethod);
+                            oldLeafNode.setHeight(oldEntity.getHeight() + 1);
+                            oldLeafNode.setType(EntityType.METHOD);
+                            oldLeafNode.setNamespace("".equals(oldEntity.getNamespace()) ? oldEntity.getName() : oldEntity.getNamespace() + "." + oldEntity.getName());
+                            oldLeafNode.setName(oldMethod.getName().getFullyQualifiedName());
+                            oldLeafNode.setParent(oldEntity);
+                            oldMethod.setJavadoc(null);
+                            oldLeafNode.setDeclaration(oldMethod);
+                            oldLeafNode.setFilePath(oldEntity.getFilePath());
+                            DeclarationNodeTree newLeafNode = new LeafNode((CompilationUnit) newMethod.getRoot(), newEntity.getFilePath(), newMethod);
+                            newLeafNode.setHeight(newEntity.getHeight() + 1);
+                            newLeafNode.setType(EntityType.METHOD);
+                            newLeafNode.setNamespace("".equals(newEntity.getNamespace()) ? newEntity.getName() : newEntity.getNamespace() + "." + newEntity.getName());
+                            newLeafNode.setName(newMethod.getName().getFullyQualifiedName());
+                            newLeafNode.setParent(newEntity);
+                            newMethod.setJavadoc(null);
+                            newLeafNode.setDeclaration(newMethod);
+                            newLeafNode.setFilePath(newEntity.getFilePath());
+                            ChangeReturnTypeRefactoring refactoring = new ChangeReturnTypeRefactoring(oldMethod.getReturnType2(), newMethod.getReturnType2(), oldLeafNode, newLeafNode);
                             refactorings.add(refactoring);
                         }
                     }
@@ -2205,10 +2329,6 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                 }
                 if (!fragment1.getName().getIdentifier().equals(fragment2.getName().getIdentifier()) && isRepaired) {
                     RenameVariableRefactoring refactoring = new RenameVariableRefactoring(fragment1, fragment2, oldEntity, newEntity);
-                    refactorings.add(refactoring);
-                }
-                if (!type1.toString().equals(type2.toString())) {
-                    ChangeVariableTypeRefactoring refactoring = new ChangeVariableTypeRefactoring(fragment1, fragment2, oldEntity, newEntity);
                     refactorings.add(refactoring);
                 }
                 List<IExtendedModifier> modifiers1 = initializer1.modifiers();
@@ -2885,7 +3005,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         deletedStatement.getType() == StatementType.WHILE_STATEMENT || deletedStatement.getType() == StatementType.DO_STATEMENT) &&
                         (addedStatement.getType() == StatementType.VARIABLE_DECLARATION_STATEMENT || addedStatement.getType() == StatementType.EXPRESSION_STATEMENT ||
                                 addedStatement.getType() == StatementType.RETURN_STATEMENT)) {
-                    if (MethodUtils.isStreamAPI(addedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
+                    if (MethodUtils.isStreamAPI(addedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
                         DeclarationNodeTree oldEntity = deletedStatement.getRoot().getMethodEntity();
                         DeclarationNodeTree newEntity = addedStatement.getRoot().getMethodEntity();
                         ReplaceLoopWithPipelineRefactoring refactoring = new ReplaceLoopWithPipelineRefactoring(deletedStatement, addedStatement, oldEntity, newEntity);
@@ -2897,7 +3017,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         addedStatement.getType() == StatementType.WHILE_STATEMENT || addedStatement.getType() == StatementType.DO_STATEMENT) &&
                         (deletedStatement.getType() == StatementType.VARIABLE_DECLARATION_STATEMENT || deletedStatement.getType() == StatementType.EXPRESSION_STATEMENT ||
                                 deletedStatement.getType() == StatementType.RETURN_STATEMENT)) {
-                    if (MethodUtils.isStreamAPI(deletedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
+                    if (MethodUtils.isStreamAPI(deletedStatement.getStatement()) && DiceFunction.calculateSimilarity(matchPair, deletedStatement, addedStatement) >= DiceFunction.minSimilarity) {
                         DeclarationNodeTree oldEntity = deletedStatement.getRoot().getMethodEntity();
                         DeclarationNodeTree newEntity = addedStatement.getRoot().getMethodEntity();
                         ReplacePipelineWithLoopRefactoring refactoring = new ReplacePipelineWithLoopRefactoring(deletedStatement, addedStatement, oldEntity, newEntity);
@@ -2951,8 +3071,26 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
                         }
                     }
                     if (!references.isEmpty()) {
-                        ExtractVariableRefactoring refactoring = new ExtractVariableRefactoring(fragment, oldEntity, newEntity, references);
-                        refactorings.add(refactoring);
+                        boolean isNotExist = true;
+                        for (Refactoring refactoring : refactorings) {
+                            if (refactoring.getRefactoringType() == RefactoringType.EXTRACT_VARIABLE) {
+                                ExtractVariableRefactoring extractVariableRefactoring = (ExtractVariableRefactoring) refactoring;
+                                VariableDeclaration vd = extractVariableRefactoring.getVariableDeclaration();
+                                if (vd instanceof VariableDeclarationFragment) {
+                                    VariableDeclarationFragment vf = (VariableDeclarationFragment) vd;
+                                    if (vf == fragment && extractVariableRefactoring.getOperationBefore() == oldEntity &&
+                                            extractVariableRefactoring.getOperationAfter() == newEntity) {
+                                        extractVariableRefactoring.addReferences(references);
+                                        isNotExist = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (isNotExist) {
+                            ExtractVariableRefactoring refactoring = new ExtractVariableRefactoring(fragment, oldEntity, newEntity, references);
+                            refactorings.add(refactoring);
+                        }
                     }
                 }
             }

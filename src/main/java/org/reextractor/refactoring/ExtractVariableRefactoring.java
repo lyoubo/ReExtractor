@@ -29,6 +29,10 @@ public class ExtractVariableRefactoring implements Refactoring {
         return RefactoringType.EXTRACT_VARIABLE;
     }
 
+    public void addReferences(Map<StatementNodeTree, StatementNodeTree> map) {
+        references.putAll(map);
+    }
+
     public List<CodeRange> leftSide() {
         List<CodeRange> ranges = new ArrayList<>();
         for (StatementNodeTree mapping : references.keySet()) {

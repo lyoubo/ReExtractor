@@ -29,6 +29,8 @@ public class MethodUtils {
                             for (VariableDeclarationFragment fragment : fragments) {
                                 if (statement.toString().equals("return " + fragment.getName().getIdentifier() + ";\n") && (parameters.size() == 0)) {
                                     return true;
+                                } else if (statement.toString().equals("return this." + fragment.getName().getIdentifier() + ";\n") && (parameters.size() == 0)) {
+                                    return true;
                                 } else if (statement.toString().equals("return " + fragment.getName().getIdentifier() + ".keySet()" + ";\n") && (parameters.size() == 0)) {
                                     return true;
                                 } else if (statement.toString().equals("return " + fragment.getName().getIdentifier() + ".values()" + ";\n") && (parameters.size() == 0)) {
