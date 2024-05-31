@@ -29,7 +29,7 @@ Currently, it supports the detection of the following refactorings:
 8. Change Return Type
 9. Change Attribute Type
 
-**<ins>supported by ReExtractor 1.1 and newer versions</ins>**
+**<ins>supported by ReExtractor 2.0 and newer versions</ins>**
 
 10. Move Method
 11. Move Attribute
