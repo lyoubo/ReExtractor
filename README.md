@@ -117,7 +117,7 @@ try (Repository repo = gitService.openRepository("E:/refactoring-toy-example")) 
   RefactoringExtractorService extractor = new RefactoringExtractorServiceImpl();
   extractor.detectAtCommit(repo, "d4bce13a443cf12da40a77c16c1e591f4f985b47", new RefactoringHandler() {
     @Override
-    public void handle(String commitId, List<Refactoring> refactorings) {
+    public void handle(String commitId, MatchPair matchPair, List<Refactoring> refactorings) {
       System.out.println("Refactorings at " + commitId);
       for (Refactoring ref : refactorings) {
         System.out.println(ref.toString());
@@ -344,7 +344,7 @@ To add ReExtractor as a maven dependency in your project, add the following snip
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>2.3.1</version>
+      <version>2.3.3</version>
     </dependency>
 
 # Tool
