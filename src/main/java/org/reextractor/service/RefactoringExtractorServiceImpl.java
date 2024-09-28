@@ -62,31 +62,31 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
     }
 
     protected void detectRefactorings(Repository repository, final RefactoringHandler handler, RevCommit currentCommit) throws Exception {
-        List<Refactoring> refactoringsAtRevision;
+        List<Refactoring> refactoringsAtRevision = Collections.emptyList();
+        MatchPair matchPair = new MatchPair();
         EntityMatcherService service = new EntityMatcherServiceImpl();
         String commitId = currentCommit.getId().getName();
         if (currentCommit.getParentCount() > 0) {
-            MatchPair matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
+            matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
             });
             refactoringsAtRevision = detectRefactorings(matchPair);
-        } else {
-            refactoringsAtRevision = Collections.emptyList();
         }
-        handler.handle(commitId, refactoringsAtRevision);
+        handler.handle(commitId, matchPair, refactoringsAtRevision);
     }
 
     public void detectAtFiles(File previousFile, File nextFile, RefactoringHandler handler) {
         List<Refactoring> refactoringsAtRevision = Collections.emptyList();
+        MatchPair matchPair = new MatchPair();
         EntityMatcherService service = new EntityMatcherServiceImpl();
         String id = previousFile.getName() + " -> " + nextFile.getName();
         try {
-            MatchPair matchPair = service.matchEntities(previousFile, nextFile, new MatchingHandler() {
+            matchPair = service.matchEntities(previousFile, nextFile, new MatchingHandler() {
             });
             refactoringsAtRevision = detectRefactorings(matchPair);
         } catch (Exception e) {
             handler.handleException(id, e);
         }
-        handler.handle(id, refactoringsAtRevision);
+        handler.handle(id, matchPair, refactoringsAtRevision);
     }
 
     protected List<Refactoring> detectRefactorings(MatchPair matchPair) {

@@ -8,6 +8,7 @@ import org.reextractor.handler.RefactoringHandler;
 import org.reextractor.refactoring.Refactoring;
 import org.reextractor.service.RefactoringExtractorService;
 import org.reextractor.service.RefactoringExtractorServiceImpl;
+import org.remapper.dto.MatchPair;
 import org.remapper.service.GitService;
 import org.remapper.util.GitServiceImpl;
 
@@ -70,8 +71,8 @@ public class ReExtractor {
             RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
             service.detectAtCommit(repo, commitId, new RefactoringHandler() {
                 @Override
-                public void handle(String commitId, List<Refactoring> refactorings) {
-                    commitJSON(gitURL, commitId, refactorings);
+                public void handle(String commitId, MatchPair matchPair, List<Refactoring> refactorings) {
+                    commitJSON(gitURL, commitId, matchPair, refactorings);
                 }
 
                 @Override
@@ -83,7 +84,7 @@ public class ReExtractor {
         }
     }
 
-    private static void commitJSON(String cloneURL, String currentCommitId, List<Refactoring> refactorings) {
+    private static void commitJSON(String cloneURL, String currentCommitId, MatchPair matchPair, List<Refactoring> refactorings) {
         Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         String url = cloneURL.replace(".git", "/commit/") + currentCommitId;
         if (Files.notExists(path)) {
@@ -98,8 +99,8 @@ public class ReExtractor {
             }
             try (BufferedWriter out = new BufferedWriter(new FileWriter(path.toFile()))) {
                 RefactoringDiscoveryJSON results = new RefactoringDiscoveryJSON();
-                results.populateJSON(cloneURL, currentCommitId, url, refactorings);
-                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class).replace("\\t", "\t");
+                results.populateJSON(cloneURL, currentCommitId, url, matchPair, refactorings);
+                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class);
                 out.write(jsonString);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -107,8 +108,8 @@ public class ReExtractor {
         } else {
             try (FileReader reader = new FileReader(path.toFile())) {
                 RefactoringDiscoveryJSON results = gson.fromJson(reader, RefactoringDiscoveryJSON.class);
-                results.populateJSON(cloneURL, currentCommitId, url, refactorings);
-                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class).replace("\\t", "\t");
+                results.populateJSON(cloneURL, currentCommitId, url, matchPair, refactorings);
+                String jsonString = gson.toJson(results, RefactoringDiscoveryJSON.class);
                 BufferedWriter out = new BufferedWriter(new FileWriter(path.toFile()));
                 out.write(jsonString);
                 out.close();

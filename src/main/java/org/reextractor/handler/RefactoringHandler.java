@@ -1,6 +1,7 @@
 package org.reextractor.handler;
 
 import org.reextractor.refactoring.Refactoring;
+import org.remapper.dto.MatchPair;
 
 import java.util.List;
 
@@ -14,6 +15,17 @@ public abstract class RefactoringHandler {
      * @param refactorings List of refactorings detected in the commit.
      */
     public void handle(String commitId, List<Refactoring> refactorings) {
+    }
+
+    /**
+     * This method is called after each commit is analyzed.
+     * You should override this method to do your custom logic with the list of detected refactorings.
+     *
+     * @param commitId     The sha of the analyzed commit.
+     * @param matchPair    The matched entities and statements.
+     * @param refactorings List of refactorings detected in the commit.
+     */
+    public void handle(String commitId, MatchPair matchPair, List<Refactoring> refactorings) {
     }
 
     /**
