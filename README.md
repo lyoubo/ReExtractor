@@ -344,7 +344,7 @@ To add ReExtractor as a maven dependency in your project, add the following snip
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>2.3.3</version>
+      <version>2.3.4</version>
     </dependency>
 
 # Tool
