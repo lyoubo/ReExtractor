@@ -1,6 +1,5 @@
 package org.reextractor.dto;
 
-
 import org.remapper.dto.MatchPair;
 
 import java.util.ArrayList;
