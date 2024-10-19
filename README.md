@@ -344,15 +344,14 @@ To add ReExtractor as a maven dependency in your project, add the following snip
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>2.3.6</version>
+      <version>2.3.7</version>
     </dependency>
 
 # Tool
 
 To get refactoring information when inspecting a commit of a Java project, you can use our [RefactoringExtractor tool](tool/).
 
-- Git Repository: Local or cloned Java project
-- Commit SHA1: Git commit ID
-- JSON File Path: JSON output file
+- Repository: Local or cloned Java project
+- CommitId: Git commit ID
 
-<img src="./tool/fig.png" alt="clone repository" width="40%" />
+<img src="./tool/fig.png" alt="clone repository" width="50%" />
