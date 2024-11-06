@@ -9,6 +9,7 @@ Table of Contents
      * [Command line](#command-line)
      * [IntelliJ IDEA](#intellij-idea)
 * [How to add as a Maven dependency](#how-to-add-as-a-maven-dependency)
+* [How to cite ReExtractor](#how-to-cite-reextractor)
 * [Tool](#tool)
 
 
@@ -339,13 +340,37 @@ In both cases, you will get the output in JSON format:
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.lyoubo/refactoring-extractor/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.lyoubo/refactoring-extractor)
 
-To add ReExtractor as a maven dependency in your project, add the following snippet to your project's pom.xml:
+In order to use ReExtractor as a maven dependency in your project, add the following snippet to your project's build configuration file:
+
+**pom.xml**
 
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>2.3.7</version>
+      <version>2.4.0</version>
     </dependency>
+
+**build.gradle**
+
+    implementation 'io.github.lyoubo:refactoring-extractor:2.4.0'
+
+# How to cite ReExtractor
+
+If you are using ReExtractor in your research, please cite the following papers:
+
+Bo Liu, Hui Liu, Nan Niu, Yuxia Zhang, Guangjie Li, and Yanjie Jiang, "[Automated Software Entity Matching Between Successive Versions](#https://lyoubo.github.io/papers/Automated_Software_Entity_Matching_Between_Successive_Versions.pdf),"
+*38th IEEE/ACM International Conference on Automated Software Engineering (ASE 2023)*, September 11-15, 2023, Kirchberg, Luxembourg.
+
+    @inproceedings{liu2023automated,
+      title={Automated Software Entity Matching Between Successive Versions},
+      author={Liu, Bo and Liu, Hui and Niu, Nan and Zhang, Yuxia and Li, Guangjie and Jiang, Yanjie},
+      booktitle={Proceedings of the 38th IEEE/ACM International Conference on Automated Software Engineering},
+      series={ASE '23},
+      pages={1615--1627},
+      year={2023},
+      publisher={IEEE},
+      doi={10.1109/ASE56229.2023.00132}
+    }
 
 # Tool
 
