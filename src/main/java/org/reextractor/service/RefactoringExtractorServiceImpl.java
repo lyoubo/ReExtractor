@@ -4,6 +4,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -17,7 +19,9 @@ import org.remapper.dto.*;
 import org.remapper.handler.MatchingHandler;
 import org.remapper.service.EntityMatcherService;
 import org.remapper.service.EntityMatcherServiceImpl;
+import org.remapper.service.GitService;
 import org.remapper.util.DiceFunction;
+import org.remapper.util.GitServiceImpl;
 
 import java.io.File;
 import java.util.*;
@@ -27,13 +31,112 @@ import java.util.stream.Collectors;
 public class RefactoringExtractorServiceImpl implements RefactoringExtractorService {
 
     @Override
+    public void detectAll(Repository repository, final RefactoringHandler handler) throws Exception {
+        GitService gitService = new GitServiceImpl();
+        Iterable<RevCommit> walk = gitService.getAllCommits(repository);
+        detectRefactorings(repository, handler, walk.iterator());
+    }
+
+    @Override
+    public void detectAll(Repository repository, String branch, final RefactoringHandler handler) throws Exception {
+        if (branch == null) {
+            detectAll(repository, handler);
+        } else {
+            GitService gitService = new GitServiceImpl();
+            RevWalk walk = gitService.createAllRevsWalk(repository, branch);
+            try {
+                detectRefactorings(repository, handler, walk.iterator());
+            } finally {
+                walk.dispose();
+            }
+        }
+    }
+
+    @Override
+    public void detectBetweenTags(Repository repository, String startTag, String endTag, RefactoringHandler handler) {
+        List<Refactoring> refactoringsAtRevision = Collections.emptyList();
+        GitService gitService = new GitServiceImpl();
+        MatchPair matchPair = new MatchPair();
+        EntityMatcherService service = new EntityMatcherServiceImpl();
+        RevWalk walk = new RevWalk(repository);
+        try {
+            Ref refFrom = repository.findRef(startTag);
+            Ref refTo = repository.findRef(endTag);
+            ObjectId startRefObjectId = gitService.getActualRefObjectId(refFrom);
+            ObjectId endRefObjectId = gitService.getActualRefObjectId(refTo);
+            RevCommit startCommit = walk.parseCommit(startRefObjectId);
+            RevCommit endCommit = walk.parseCommit(endRefObjectId);
+            matchPair = service.matchEntities(gitService, repository, startCommit, endCommit, new MatchingHandler() {
+            });
+            refactoringsAtRevision = detectRefactorings(matchPair);
+        } catch (MissingObjectException ignored) {
+        } catch (Exception e) {
+            handler.handleException(startTag, endTag, e);
+        } finally {
+            walk.close();
+            walk.dispose();
+            try {
+                gitService.resetHard(repository);
+                gitService.checkoutBranch(repository);
+            } catch (Exception ignored) {
+            }
+        }
+        handler.handle(startTag, endTag, matchPair, refactoringsAtRevision);
+    }
+
+    @Override
+    public void detectBetweenCommits(Repository repository, String startCommitId, String endCommitId,
+                                     RefactoringHandler handler) {
+        List<Refactoring> refactoringsAtRevision = Collections.emptyList();
+        GitService gitService = new GitServiceImpl();
+        MatchPair matchPair = new MatchPair();
+        EntityMatcherService service = new EntityMatcherServiceImpl();
+        RevWalk walk = new RevWalk(repository);
+        try {
+            RevCommit startCommit = walk.parseCommit(repository.resolve(startCommitId));
+            RevCommit endCommit = walk.parseCommit(repository.resolve(endCommitId));
+            matchPair = service.matchEntities(gitService, repository, startCommit, endCommit, new MatchingHandler() {
+            });
+            refactoringsAtRevision = detectRefactorings(matchPair);
+        } catch (MissingObjectException ignored) {
+        } catch (Exception e) {
+            handler.handleException(startCommitId, endCommitId, e);
+        } finally {
+            walk.close();
+            walk.dispose();
+            try {
+                gitService.resetHard(repository);
+                gitService.checkoutBranch(repository);
+            } catch (Exception ignored) {
+            }
+        }
+        handler.handle(startCommitId, endCommitId, matchPair, refactoringsAtRevision);
+    }
+
+    @Override
+    public void detectAllBetweenTags(Repository repository, String startTag, String endTag, RefactoringHandler handler) throws Exception {
+        GitService gitService = new GitServiceImpl();
+        Iterable<RevCommit> walk = gitService.createRevsWalkBetweenTags(repository, startTag, endTag);
+        detectRefactorings(repository, handler, walk.iterator());
+    }
+
+    @Override
+    public void detectAllBetweenCommits(Repository repository, String startCommitId, String endCommitId,
+                                        RefactoringHandler handler) throws Exception {
+        GitService gitService = new GitServiceImpl();
+        Iterable<RevCommit> walk = gitService.createRevsWalkBetweenCommits(repository, startCommitId, endCommitId);
+        detectRefactorings(repository, handler, walk.iterator());
+    }
+
+    @Override
     public void detectAtCommit(Repository repository, String commitId, RefactoringHandler handler) {
         RevWalk walk = new RevWalk(repository);
+        GitService gitService = new GitServiceImpl();
         try {
             RevCommit commit = walk.parseCommit(repository.resolve(commitId));
             if (commit.getParentCount() > 0) {
                 walk.parseCommit(commit.getParent(0));
-                this.detectRefactorings(repository, handler, commit);
+                this.detectRefactorings(gitService, repository, handler, commit);
             }
         } catch (MissingObjectException ignored) {
         } catch (Exception e) {
@@ -41,6 +144,11 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         } finally {
             walk.close();
             walk.dispose();
+            try {
+                gitService.resetHard(repository);
+                gitService.checkoutBranch(repository);
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -61,13 +169,43 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         }
     }
 
-    protected void detectRefactorings(Repository repository, final RefactoringHandler handler, RevCommit currentCommit) throws Exception {
+    private void detectRefactorings(Repository repository, final RefactoringHandler handler, Iterator<RevCommit> i) {
+        int commitsCount = 0;
+        int errorCommitsCount = 0;
+        int refactoringsCount = 0;
+        EntityMatcherService service = new EntityMatcherServiceImpl();
+        GitService gitService = new GitServiceImpl();
+        while (i.hasNext()) {
+            RevCommit currentCommit = i.next();
+            String commitId = currentCommit.getId().getName();
+            try {
+                MatchPair matchPair = service.matchEntities(gitService, repository, currentCommit, new MatchingHandler() {
+                });
+                List<Refactoring> refactoringsAtRevision = detectRefactorings(matchPair);
+                refactoringsCount += refactoringsAtRevision.size();
+                handler.handle(commitId, matchPair, refactoringsAtRevision);
+            } catch (Exception e) {
+                handler.handleException(commitId, e);
+                errorCommitsCount++;
+            } finally {
+                try {
+                    gitService.resetHard(repository);
+                    gitService.checkoutBranch(repository);
+                } catch (Exception ignored) {
+                }
+            }
+            commitsCount++;
+        }
+        handler.onFinish(refactoringsCount, commitsCount, errorCommitsCount);
+    }
+
+    protected void detectRefactorings(GitService gitService, Repository repository, final RefactoringHandler handler, RevCommit currentCommit) throws Exception {
         List<Refactoring> refactoringsAtRevision = Collections.emptyList();
         MatchPair matchPair = new MatchPair();
         EntityMatcherService service = new EntityMatcherServiceImpl();
         String commitId = currentCommit.getId().getName();
         if (currentCommit.getParentCount() > 0) {
-            matchPair = service.matchEntities(repository, currentCommit, new MatchingHandler() {
+            matchPair = service.matchEntities(gitService, repository, currentCommit, new MatchingHandler() {
             });
             refactoringsAtRevision = detectRefactorings(matchPair);
         }

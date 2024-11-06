@@ -37,32 +37,199 @@ public class ReExtractor {
             return;
         }
 
-        if (option.equalsIgnoreCase("-c")) {
+        if (option.equalsIgnoreCase("-a")) {
+            detectAll(args);
+        } else if (option.equalsIgnoreCase("-ac")) {
+            detectAllBetweenCommits(args);
+        } else if (option.equalsIgnoreCase("-at")) {
+            detectAllBetweenTags(args);
+        } else if (option.equalsIgnoreCase("-bc")) {
+            detectBetweenCommits(args);
+        } else if (option.equalsIgnoreCase("-bt")) {
+            detectBetweenTags(args);
+        } else if (option.equalsIgnoreCase("-c")) {
             detectAtCommit(args);
         } else {
             throw argumentException();
         }
     }
 
-    private static void processJSONOption(String[] args) {
-        if (args[args.length - 2].equalsIgnoreCase("-json")) {
-            path = Paths.get(args[args.length - 1]);
+    public static void detectAll(String[] args) throws Exception {
+        int maxArgLength = processJSONoption(args, 3);
+        if (args.length > maxArgLength) {
+            throw argumentException();
         }
-        if (Files.exists(path) && path.toFile().length() == 0) {
-            try {
-                Files.delete(path);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        String folder = args[1];
+        String branch = null;
+        if (containsBranchArgument(args)) {
+            branch = args[2];
+        }
+        GitService gitService = new GitServiceImpl();
+        try (Repository repo = gitService.openRepository(folder)) {
+            String gitURL = GitServiceImpl.getRemoteUrl(folder);
+            RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
+            service.detectAll(repo, branch, new RefactoringHandler() {
+                @Override
+                public void handle(String commitId, MatchPair matchPair, List<Refactoring> refactorings) {
+                    commitJSON(gitURL, commitId, matchPair, refactorings);
+                }
+
+                @Override
+                public void onFinish(int refactoringsCount, int commitsCount, int errorCommitsCount) {
+                    System.out.println(String.format("Total count: [Commits: %d, Errors: %d, Refactorings: %d]",
+                            commitsCount, errorCommitsCount, refactoringsCount));
+                }
+
+                @Override
+                public void handleException(String commit, Exception e) {
+                    System.err.println("Error processing commit " + commit);
+                    e.printStackTrace(System.err);
+                }
+            });
         }
     }
 
-    public static void detectAtCommit(String[] args) throws Exception {
-        processJSONOption(args);
-        if (args.length != 5) {
+    private static boolean containsBranchArgument(String[] args) {
+        return args.length == 3 || (args.length > 3 && args[3].equalsIgnoreCase("-json"));
+    }
+
+    private static int processJSONoption(String[] args, int maxArgLength) {
+        if (args[args.length - 2].equalsIgnoreCase("-json")) {
+            path = Paths.get(args[args.length - 1]);
+            maxArgLength = maxArgLength + 2;
+        }
+        return maxArgLength;
+    }
+
+    public static void detectBetweenCommits(String[] args) throws Exception {
+        int maxArgLength = processJSONoption(args, 4);
+        if (!(args.length == maxArgLength - 1 || args.length == maxArgLength)) {
             throw argumentException();
         }
+        String folder = args[1];
+        String startCommit = args[2];
+        String endCommit = containsEndArgument(args) ? args[3] : null;
+        GitService gitService = new GitServiceImpl();
+        try (Repository repo = gitService.openRepository(folder)) {
+            String gitURL = GitServiceImpl.getRemoteUrl(folder);
+            RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
+            service.detectBetweenCommits(repo, startCommit, endCommit, new RefactoringHandler() {
+                @Override
+                public void handle(String startCommitId, String endCommitId, MatchPair matchPair, List<Refactoring> refactorings) {
+                    commitJSON(gitURL, endCommitId, matchPair, refactorings);
+                }
 
+                @Override
+                public void handleException(String startCommitId, String endCommitId, Exception e) {
+                    System.err.println("Error processing commit " + endCommitId);
+                    e.printStackTrace(System.err);
+                }
+            });
+        }
+    }
+
+    public static void detectBetweenTags(String[] args) throws Exception {
+        int maxArgLength = processJSONoption(args, 4);
+        if (!(args.length == maxArgLength - 1 || args.length == maxArgLength)) {
+            throw argumentException();
+        }
+        String folder = args[1];
+        String startTag = args[2];
+        String endTag = containsEndArgument(args) ? args[3] : null;
+        GitService gitService = new GitServiceImpl();
+        try (Repository repo = gitService.openRepository(folder)) {
+            String gitURL = GitServiceImpl.getRemoteUrl(folder);
+            RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
+            service.detectBetweenTags(repo, startTag, endTag, new RefactoringHandler() {
+                @Override
+                public void handle(String startTag, String endTag, MatchPair matchPair, List<Refactoring> refactorings) {
+                    commitJSON(gitURL, endTag, matchPair, refactorings);
+                }
+
+                @Override
+                public void handleException(String startTag, String endTag, Exception e) {
+                    System.err.println("Error processing tag " + endTag);
+                    e.printStackTrace(System.err);
+                }
+            });
+        }
+    }
+
+    public static void detectAllBetweenCommits(String[] args) throws Exception {
+        int maxArgLength = processJSONoption(args, 4);
+        if (!(args.length == maxArgLength - 1 || args.length == maxArgLength)) {
+            throw argumentException();
+        }
+        String folder = args[1];
+        String startCommit = args[2];
+        String endCommit = containsEndArgument(args) ? args[3] : null;
+        GitService gitService = new GitServiceImpl();
+        try (Repository repo = gitService.openRepository(folder)) {
+            String gitURL = GitServiceImpl.getRemoteUrl(folder);
+            RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
+            service.detectAllBetweenCommits(repo, startCommit, endCommit, new RefactoringHandler() {
+                @Override
+                public void handle(String commitId, MatchPair matchPair, List<Refactoring> refactorings) {
+                    commitJSON(gitURL, commitId, matchPair, refactorings);
+                }
+
+                @Override
+                public void onFinish(int refactoringsCount, int commitsCount, int errorCommitsCount) {
+                    System.out.println(String.format("Total count: [Commits: %d, Errors: %d, Refactorings: %d]",
+                            commitsCount, errorCommitsCount, refactoringsCount));
+                }
+
+                @Override
+                public void handleException(String commit, Exception e) {
+                    System.err.println("Error processing commit " + commit);
+                    e.printStackTrace(System.err);
+                }
+            });
+        }
+    }
+
+    public static void detectAllBetweenTags(String[] args) throws Exception {
+        int maxArgLength = processJSONoption(args, 4);
+        if (!(args.length == maxArgLength - 1 || args.length == maxArgLength)) {
+            throw argumentException();
+        }
+        String folder = args[1];
+        String startTag = args[2];
+        String endTag = containsEndArgument(args) ? args[3] : null;
+        GitService gitService = new GitServiceImpl();
+        try (Repository repo = gitService.openRepository(folder)) {
+            String gitURL = GitServiceImpl.getRemoteUrl(folder);
+            RefactoringExtractorService service = new RefactoringExtractorServiceImpl();
+            service.detectAllBetweenTags(repo, startTag, endTag, new RefactoringHandler() {
+                @Override
+                public void handle(String commitId, MatchPair matchPair, List<Refactoring> refactorings) {
+                    commitJSON(gitURL, commitId, matchPair, refactorings);
+                }
+
+                @Override
+                public void onFinish(int refactoringsCount, int commitsCount, int errorCommitsCount) {
+                    System.out.println(String.format("Total count: [Commits: %d, Errors: %d, Refactorings: %d]",
+                            commitsCount, errorCommitsCount, refactoringsCount));
+                }
+
+                @Override
+                public void handleException(String commit, Exception e) {
+                    System.err.println("Error processing commit " + commit);
+                    e.printStackTrace(System.err);
+                }
+            });
+        }
+    }
+
+    private static boolean containsEndArgument(String[] args) {
+        return args.length == 4 || (args.length > 4 && args[4].equalsIgnoreCase("-json"));
+    }
+
+    public static void detectAtCommit(String[] args) throws Exception {
+        int maxArgLength = processJSONoption(args, 3);
+        if (args.length != maxArgLength) {
+            throw argumentException();
+        }
         String folder = args[1];
         String commitId = args[2];
         GitService gitService = new GitServiceImpl();
@@ -121,6 +288,16 @@ public class ReExtractor {
 
     private static void printTips() {
         System.out.println("-h\t\t\t\t\t\t\t\t\t\t\tShow options");
+        System.out.println(
+                "-a <git-repo-folder> <branch> -json <path-to-json-file>\t\t\t\t\tDetect all refactorings at <branch> for <git-repo-folder>. If <branch> is not specified, commits from all branches are analyzed.");
+        System.out.println(
+                "-ac <git-repo-folder> <start-commit-sha1> <end-commit-sha1> -json <path-to-json-file>\tDetect refactorings from all commits between <start-commit-sha1> and <end-commit-sha1> for project <git-repo-folder>");
+        System.out.println(
+                "-at <git-repo-folder> <start-tag> <end-tag> -json <path-to-json-file>\t\t\tDetect refactorings from all commits between <start-tag> and <end-tag> for project <git-repo-folder>");
+        System.out.println(
+                "-bc <git-repo-folder> <start-commit-sha1> <end-commit-sha1> -json <path-to-json-file>\tDetect refactorings between <start-commit-sha1> and <end-commit-sha1> for project <git-repo-folder>");
+        System.out.println(
+                "-bt <git-repo-folder> <start-tag> <end-tag> -json <path-to-json-file>\t\t\tDetect refactorings between <start-tag> and <end-tag> for project <git-repo-folder>");
         System.out.println(
                 "-c <git-repo-folder> <commit-sha1> -json <path-to-json-file>\t\t\t\tDetect refactorings at specified commit <commit-sha1> for project <git-repo-folder>");
     }

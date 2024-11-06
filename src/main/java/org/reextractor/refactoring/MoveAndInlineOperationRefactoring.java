@@ -29,7 +29,7 @@ public class MoveAndInlineOperationRefactoring implements Refactoring {
         for (Pair<StatementNodeTree, StatementNodeTree> matchedStatement : matchedStatements) {
             StatementNodeTree left = matchedStatement.getLeft();
             StatementNodeTree right = matchedStatement.getRight();
-            if(left.getRoot() == inlinedOperation.getMethodNode() && right.getRoot() == targetOperationAfterInline.getMethodNode()) {
+            if (left.getRoot() == inlinedOperation.getMethodNode() && right.getRoot() == targetOperationAfterInline.getMethodNode()) {
                 inlinedCodeFragmentsFromInlinedOperation.add(left);
                 inlinedCodeFragmentsInTargetOperation.add(right);
             }

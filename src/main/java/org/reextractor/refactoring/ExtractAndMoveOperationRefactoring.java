@@ -29,7 +29,7 @@ public class ExtractAndMoveOperationRefactoring implements Refactoring {
         for (Pair<StatementNodeTree, StatementNodeTree> matchedStatement : matchedStatements) {
             StatementNodeTree left = matchedStatement.getLeft();
             StatementNodeTree right = matchedStatement.getRight();
-            if(left.getRoot() == sourceOperationBeforeExtraction.getMethodNode() && right.getRoot() == extractedOperation.getMethodNode()) {
+            if (left.getRoot() == sourceOperationBeforeExtraction.getMethodNode() && right.getRoot() == extractedOperation.getMethodNode()) {
                 extractedCodeFragmentsFromSourceOperation.add(left);
                 extractedCodeFragmentsToExtractedOperation.add(right);
             }
@@ -47,7 +47,7 @@ public class ExtractAndMoveOperationRefactoring implements Refactoring {
         ranges.add(sourceOperationBeforeExtraction.codeRange()
                 .setDescription("source method declaration before extraction")
                 .setCodeElement(MethodUtils.method2String(sourceOperationBeforeExtraction)));
-        for(StatementNodeTree extractedCodeFragment : extractedCodeFragmentsFromSourceOperation) {
+        for (StatementNodeTree extractedCodeFragment : extractedCodeFragmentsFromSourceOperation) {
             ranges.add(extractedCodeFragment.codeRange()
                     .setDescription("extracted code from source method declaration")
                     .setCodeElement(extractedCodeFragment.getExpression()));
@@ -60,7 +60,7 @@ public class ExtractAndMoveOperationRefactoring implements Refactoring {
         ranges.add(extractedOperation.codeRange()
                 .setDescription("extracted method declaration")
                 .setCodeElement(MethodUtils.method2String(extractedOperation)));
-        for(StatementNodeTree extractedCodeFragment : extractedCodeFragmentsToExtractedOperation) {
+        for (StatementNodeTree extractedCodeFragment : extractedCodeFragmentsToExtractedOperation) {
             ranges.add(extractedCodeFragment.codeRange()
                     .setDescription("extracted code to extracted method declaration")
                     .setCodeElement(extractedCodeFragment.getExpression()));

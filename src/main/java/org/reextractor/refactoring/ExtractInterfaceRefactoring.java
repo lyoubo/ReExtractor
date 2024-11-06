@@ -16,7 +16,7 @@ public class ExtractInterfaceRefactoring implements Refactoring {
     private Set<DeclarationNodeTree> subclassSetAfter;
 
     public ExtractInterfaceRefactoring(DeclarationNodeTree extractedClass, Set<DeclarationNodeTree> subclassSetBefore,
-                                        Set<DeclarationNodeTree> subclassSetAfter) {
+                                       Set<DeclarationNodeTree> subclassSetAfter) {
         this.extractedClass = extractedClass;
         this.subclassSetBefore = subclassSetBefore;
         this.subclassSetAfter = subclassSetAfter;

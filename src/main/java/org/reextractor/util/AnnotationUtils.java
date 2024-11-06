@@ -12,18 +12,17 @@ public class AnnotationUtils {
         String typeName = annotation.getTypeName().getFullyQualifiedName();
         StringBuilder sb = new StringBuilder();
         sb.append("@").append(typeName);
-        if(annotation instanceof SingleMemberAnnotation) {
-            SingleMemberAnnotation singleMemberAnnotation = (SingleMemberAnnotation)annotation;
+        if (annotation instanceof SingleMemberAnnotation) {
+            SingleMemberAnnotation singleMemberAnnotation = (SingleMemberAnnotation) annotation;
             String value = stringify(singleMemberAnnotation.getValue());
             sb.append("(");
             sb.append(value);
             sb.append(")");
-        }
-        else if(annotation instanceof NormalAnnotation) {
-            NormalAnnotation normalAnnotation = (NormalAnnotation)annotation;
+        } else if (annotation instanceof NormalAnnotation) {
+            NormalAnnotation normalAnnotation = (NormalAnnotation) annotation;
             List<MemberValuePair> pairs = normalAnnotation.values();
             Map<String, String> memberValuePairs = new LinkedHashMap<>();
-            for(MemberValuePair pair : pairs) {
+            for (MemberValuePair pair : pairs) {
                 memberValuePairs.put(pair.getName().getIdentifier(), stringify(pair.getValue()));
             }
             sb.append("(");
