@@ -75,11 +75,6 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         } finally {
             walk.close();
             walk.dispose();
-            try {
-                gitService.resetHard(repository);
-                gitService.checkoutBranch(repository);
-            } catch (Exception ignored) {
-            }
         }
         handler.handle(startTag, endTag, matchPair, refactoringsAtRevision);
     }
@@ -104,11 +99,6 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         } finally {
             walk.close();
             walk.dispose();
-            try {
-                gitService.resetHard(repository);
-                gitService.checkoutBranch(repository);
-            } catch (Exception ignored) {
-            }
         }
         handler.handle(startCommitId, endCommitId, matchPair, refactoringsAtRevision);
     }
@@ -144,11 +134,6 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         } finally {
             walk.close();
             walk.dispose();
-            try {
-                gitService.resetHard(repository);
-                gitService.checkoutBranch(repository);
-            } catch (Exception ignored) {
-            }
         }
     }
 
@@ -190,7 +175,6 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
             } finally {
                 try {
                     gitService.resetHard(repository);
-                    gitService.checkoutBranch(repository);
                 } catch (Exception ignored) {
                 }
             }
