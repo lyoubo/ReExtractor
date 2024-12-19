@@ -347,12 +347,12 @@ In order to use ReExtractor as a maven dependency in your project, add the follo
     <dependency>
       <groupId>io.github.lyoubo</groupId>
       <artifactId>refactoring-extractor</artifactId>
-      <version>2.4.1</version>
+      <version>2.4.4</version>
     </dependency>
 
 **build.gradle**
 
-    implementation 'io.github.lyoubo:refactoring-extractor:2.4.1'
+    implementation 'io.github.lyoubo:refactoring-extractor:2.4.4'
 
 # How to cite ReExtractor
 
