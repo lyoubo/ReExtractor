@@ -227,7 +227,7 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
         detectRefactoringsInMatchedEntities(matchedEntities, refactorings);
         detectRefactoringsBetweenMatchedAndAddedEntities(matchPair, matchedEntities, addedEntities, matchedStatements, refactorings);
         detectRefactoringsBetweenMatchedDeletedEntities(matchedEntities, deletedEntities, matchedStatements, refactorings);
-        detectRefactoringsInIntroducedObjects(introducedObjects, refactorings);
+        detectRefactoringsInIntroducedObjects(introducedObjects, matchPair, refactorings);
 
         detectRefactoringsInMatchedStatements(matchedStatements, refactorings);
         detectRefactoringsBetweenMatchedAndAddedStatements(methodNodePairs, matchedStatements, addedStatements, refactorings);
@@ -1995,7 +1995,8 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
     }
 
     private void detectRefactoringsInIntroducedObjects(Map<DeclarationNodeTree, Set<Pair<DeclarationNodeTree, DeclarationNodeTree>>> introducedObjects,
-                                                       List<Refactoring> refactorings) {
+                                                       MatchPair matchPair, List<Refactoring> refactorings) {
+        Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> matchedEntities = matchPair.getMatchedEntities();
         for (DeclarationNodeTree extractedEntity : introducedObjects.keySet()) {
             Set<Pair<DeclarationNodeTree, DeclarationNodeTree>> value = introducedObjects.get(extractedEntity);
             Map<Pair<DeclarationNodeTree, DeclarationNodeTree>, Map<DeclarationNodeTree, DeclarationNodeTree>> extractedAttributes = new LinkedHashMap<>();
@@ -2015,7 +2016,35 @@ public class RefactoringExtractorServiceImpl implements RefactoringExtractorServ
             }
             for (Pair<DeclarationNodeTree, DeclarationNodeTree> parentPair : extractedAttributes.keySet()) {
                 Map<DeclarationNodeTree, DeclarationNodeTree> attributes = extractedAttributes.get(parentPair);
-                ExtractClassRefactoring refactoring = new ExtractClassRefactoring(parentPair.getLeft(), parentPair.getRight(), extractedEntity, new HashMap<>(), attributes);
+                Map<DeclarationNodeTree, DeclarationNodeTree> extractedOperations = new TreeMap<>(Comparator.comparingInt(startLine -> startLine.getLocationInfo().getStartLine()));
+                for (Pair<DeclarationNodeTree, DeclarationNodeTree> pair : matchedEntities) {
+                    DeclarationNodeTree oldEntity = pair.getLeft();
+                    DeclarationNodeTree newEntity = pair.getRight();
+                    if (oldEntity.getType() == EntityType.METHOD && newEntity.getType() == EntityType.METHOD) {
+                        if (newEntity.getParent() == extractedEntity) {
+                            MethodDeclaration declaration1 = (MethodDeclaration) oldEntity.getDeclaration();
+                            MethodDeclaration declaration2 = (MethodDeclaration) newEntity.getDeclaration();
+                            if (!declaration1.isConstructor() && !declaration2.isConstructor()) {
+                                extractedOperations.put(oldEntity, newEntity);
+                            }
+                        } else {
+                            if (newEntity.getParent().getType() == EntityType.CLASS || newEntity.getParent().getType() == EntityType.INTERFACE) {
+                                TypeDeclaration newClass = (TypeDeclaration) newEntity.getParent().getDeclaration();
+                                TypeDeclaration addedClass = (TypeDeclaration) extractedEntity.getDeclaration();
+                                if (isSubTypeOf(newClass, addedClass)) {
+                                    List<DeclarationNodeTree> children = extractedEntity.getChildren();
+                                    for (DeclarationNodeTree child : children) {
+                                        if (child.getType() == newEntity.getType() && child.getName().equals(newEntity.getName()) &&
+                                                isSameSignature(child, newEntity)) {
+                                            extractedOperations.put(oldEntity, child);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                ExtractClassRefactoring refactoring = new ExtractClassRefactoring(parentPair.getLeft(), parentPair.getRight(), extractedEntity, extractedOperations, attributes);
                 refactorings.add(refactoring);
             }
         }
