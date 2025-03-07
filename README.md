@@ -371,6 +371,15 @@ Bo Liu, Hui Liu, Nan Niu, Yuxia Zhang, Guangjie Li, and Yanjie Jiang, "[Automate
       publisher={IEEE},
       doi={10.1109/ASE56229.2023.00132}
     }
+    
+    @article{liu2025automated,
+      title={An Automated Approach to Discovering Software Refactorings by Comparing Successive Versions},
+      author={Liu, Bo and Liu, Hui and Niu, Nan and Zhang, Yuxia and Li, Guangjie and Jiang, He and Jiang, Yanjie},
+      journal={IEEE Transactions on Software Engineering},
+      year={2025},
+      publisher={IEEE}，
+      doi={10.1109/TSE.2025.3534239}
+    }
 
 # Tool
 
