@@ -361,6 +361,8 @@ If you are using ReExtractor in your research, please cite the following papers:
 Bo Liu, Hui Liu, Nan Niu, Yuxia Zhang, Guangjie Li, and Yanjie Jiang, "[Automated Software Entity Matching Between Successive Versions](#https://lyoubo.github.io/papers/Automated_Software_Entity_Matching_Between_Successive_Versions.pdf),"
 *38th IEEE/ACM International Conference on Automated Software Engineering (ASE 2023)*, September 11-15, 2023, Kirchberg, Luxembourg.
 
+Bo Liu, Hui Liu, Nan Niu, Yuxia Zhang, Guangjie Li, He Jiang, and Yanjie Jiang, "[An Automated Approach to Discovering Software Refactorings by Comparing Successive Versions](#https://lyoubo.github.io/papers/An_Automated_Approach_to_Discovering_Software_Refactorings_by_Comparing_Successive_Versions.pdf)," *IEEE Transactions on Software Engineering*, pp. 1-23, January 2025.
+
     @inproceedings{liu2023automated,
       title={Automated Software Entity Matching Between Successive Versions},
       author={Liu, Bo and Liu, Hui and Niu, Nan and Zhang, Yuxia and Li, Guangjie and Jiang, Yanjie},
@@ -377,7 +379,7 @@ Bo Liu, Hui Liu, Nan Niu, Yuxia Zhang, Guangjie Li, and Yanjie Jiang, "[Automate
       author={Liu, Bo and Liu, Hui and Niu, Nan and Zhang, Yuxia and Li, Guangjie and Jiang, He and Jiang, Yanjie},
       journal={IEEE Transactions on Software Engineering},
       year={2025},
-      publisher={IEEE}，
+      publisher={IEEE},
       doi={10.1109/TSE.2025.3534239}
     }
 
